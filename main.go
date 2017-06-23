@@ -116,6 +116,16 @@ func IsShellGeiTweet(tweet string) (bool, string) {
 	return false, ""
 }
 
+func IsMyTweet(api *anaconda.TwitterApi, tweet anaconda.Tweet) bool {
+	v := url.Values{}
+	self, err := api.GetSelf(v)
+	if err != nil {
+		return false
+	}
+
+	return self.Id == tweet.User.Id
+}
+
 func main() {
 	if len(os.Args) < 7 {
 		log.Println("6 arguments required. Consumer key, Consumer secret, Access token, Access token secret, timeout[sec], docker image name")
@@ -148,6 +158,10 @@ func main() {
 			go func() {
 				is, text := IsShellGeiTweet(tweet.Text)
 				if !is {
+					return
+				}
+				is = IsMyTweet(api, tweet)
+				if is {
 					return
 				}
 				result, err := DoShellGei(config, text)
