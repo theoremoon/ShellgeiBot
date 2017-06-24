@@ -13,6 +13,7 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+	"html"
 )
 
 type Config struct {
@@ -164,6 +165,7 @@ func main() {
 				if is {
 					return
 				}
+				text = html.UnescapeString(text)
 				result, err := DoShellGei(config, text)
 				if err != nil {
 					return
