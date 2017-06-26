@@ -117,14 +117,8 @@ func IsShellGeiTweet(tweet string) (bool, string) {
 	return false, ""
 }
 
-func IsMyTweet(api *anaconda.TwitterApi, tweet anaconda.Tweet) bool {
-	v := url.Values{}
-	self, err := api.GetSelf(v)
-	if err != nil {
-		return false
-	}
-
-	return self.Id == tweet.User.Id
+func RemoveMentionSymbol(self anaconda.User, tweet string) string {
+	return strings.Replace(tweet, "@"+self.ScreenName, "", -1)
 }
 
 func main() {
@@ -138,6 +132,7 @@ func main() {
 	api := anaconda.NewTwitterApi(os.Args[3], os.Args[4])
 	timeOutSec, err := strconv.Atoi(os.Args[5])
 	if err != nil {
+		log.Println(err)
 		return
 	}
 	image := os.Args[6]
@@ -150,6 +145,12 @@ func main() {
 	}
 
 	v := url.Values{}
+	self, err := api.GetSelf(v)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
 	stream := api.UserStream(v)
 
 	for {
@@ -162,10 +163,11 @@ func main() {
 					return
 				}
 				is = IsMyTweet(api, tweet)
-				if is {
+				if self.Id == tweet.User.Id {
 					return
 				}
 				text = html.UnescapeString(text)
+				text = RemoveMentionSymbol(self, text)
 				result, err := DoShellGei(config, text)
 				if err != nil {
 					return
