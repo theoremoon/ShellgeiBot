@@ -162,7 +162,6 @@ func main() {
 				if !is {
 					return
 				}
-				is = IsMyTweet(api, tweet)
 				if self.Id == tweet.User.Id {
 					return
 				}
