@@ -98,10 +98,19 @@ func TweetUrl(tweet anaconda.Tweet) string {
 	return "https://twitter.com/" + tweet.User.ScreenName + "/status/" + tweet.IdStr
 }
 
+func Tweetable(text string, postfix string) string {
+	l := len(postfix)
+	if len(text) < 140-l {
+		return text + postfix
+	}
+	return text[:140-l] + postfix
+}
+
 func TweetResult(api *anaconda.TwitterApi, tweet anaconda.Tweet, result string) error {
 	/// post done message
 	v := url.Values{}
-	_, err := api.PostTweet(result+" "+TweetUrl(tweet), v)
+	postfix := " " + TweetUrl(tweet)
+	_, err := api.PostTweet(Tweetable(result, postfix), v)
 	if err != nil {
 		return err
 	}
@@ -144,15 +153,6 @@ func InsertShellGei(db *sql.DB, tweet anaconda.Tweet) error {
 	return nil
 }
 
-func AlreadyDone(db *sql.DB, tweet anaconda.Tweet) bool {
-	var cnt int
-	err := db.QueryRow("select count(*) from shellgeis where tweet_id=? ", tweet.Id).Scan(&cnt)
-	if err != nil {
-		return true
-	}
-	return cnt > 0
-}
-
 func RecentShellgeiCount(db *sql.DB, timeRange int, tweet anaconda.Tweet) (int, error) {
 	now, err := tweet.CreatedAtTime()
 	if err != nil {
@@ -161,6 +161,15 @@ func RecentShellgeiCount(db *sql.DB, timeRange int, tweet anaconda.Tweet) (int, 
 	var cnt int
 	err = db.QueryRow("select count(*) from shellgeis where user_id=? and timestamp > ?", tweet.User.IdStr, now.Unix()-int64(timeRange)).Scan(&cnt)
 	return cnt, err
+}
+
+func IsFollower(api *anaconda.TwitterApi, tweet anaconda.Tweet) bool {
+	v := url.Values{}
+	u, err := api.GetUsersShowById(tweet.User.Id, v)
+	if err != nil {
+		return false
+	}
+	return u.Following
 }
 
 func main() {
@@ -213,7 +222,7 @@ func main() {
 		switch tweet := t.(type) {
 		case anaconda.Tweet:
 			go func() {
-				if tweet.RetweetCount > 0 {
+				if tweet.RetweetedStatus != nil {
 					return
 				}
 				is, text := IsShellGeiTweet(tweet.Text)
@@ -224,8 +233,8 @@ func main() {
 					log.Println("self shellgei")
 					return
 				}
-				if AlreadyDone(db, tweet) {
-					log.Println("already done shellgei")
+				if !IsFollower(api, tweet) {
+					log.Println("not following" + tweet.User.ScreenName)
 					return
 				}
 				text = html.UnescapeString(text)
@@ -248,7 +257,11 @@ func main() {
 				if len(result) == 0 {
 					return
 				}
-				TweetResult(api, tweet, result)
+				err = TweetResult(api, tweet, result)
+				if err != nil {
+					log.Println(err)
+					return
+				}
 			}()
 		}
 	}
