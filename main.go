@@ -213,7 +213,7 @@ func main() {
 		switch tweet := t.(type) {
 		case anaconda.Tweet:
 			go func() {
-				if tweet.Retweeted {
+				if tweet.RetweetCount > 0 {
 					return
 				}
 				is, text := IsShellGeiTweet(tweet.Text)
