@@ -1,19 +1,21 @@
 package main
 
 import (
-	"strconv"
 	"bytes"
 	"crypto/rand"
+	"database/sql"
 	"github.com/ChimeraCoder/anaconda"
+	_ "github.com/mattn/go-sqlite3"
 	"golang.org/x/net/context"
+	"html"
 	"log"
 	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
-	"html"
 )
 
 type Config struct {
@@ -121,11 +123,59 @@ func RemoveMentionSymbol(self anaconda.User, tweet string) string {
 	return strings.Replace(tweet, "@"+self.ScreenName, "", -1)
 }
 
+const schema = `
+create table if not exists shellgeis (
+	user_id text,
+	tweet_id integer,
+	shellgei text,
+	timestamp integer
+);
+`
+
+func InsertShellGei(db *sql.DB, tweet anaconda.Tweet) error {
+	now, err := tweet.CreatedAtTime()
+	if err != nil {
+		return err
+	}
+	_, err = db.Exec("insert into shellgeis(user_id, tweet_id, shellgei, timestamp) values (?,?,?,?)", tweet.User.IdStr, tweet.Id, tweet.Text, now.Unix())
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func AlreadyDone(db *sql.DB, tweet anaconda.Tweet) bool {
+	var cnt int
+	err := db.QueryRow("select count(*) from shellgeis where tweet_id=? ", tweet.Id).Scan(&cnt)
+	if err != nil {
+		return true
+	}
+	return cnt > 0
+}
+
+func RecentShellgeiCount(db *sql.DB, timeRange int, tweet anaconda.Tweet) (int, error) {
+	now, err := tweet.CreatedAtTime()
+	if err != nil {
+		return 0, err
+	}
+	var cnt int
+	err = db.QueryRow("select count(*) from shellgeis where user_id=? and timestamp > ?", tweet.User.IdStr, now.Unix()-int64(timeRange)).Scan(&cnt)
+	return cnt, err
+}
+
 func main() {
-	if len(os.Args) < 7 {
-		log.Println("6 arguments required. Consumer key, Consumer secret, Access token, Access token secret, timeout[sec], docker image name")
+	if len(os.Args) < 8 {
+		log.Println("7 arguments required. Consumer key, Consumer secret, Access token, Access token secret, timeout[sec], docker image name shellgei_per_minutes")
 		return
 	}
+
+	db, err := sql.Open("sqlite3", "./database.db")
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	db.Exec(schema)
+
 	anaconda.SetConsumerKey(os.Args[1])
 	anaconda.SetConsumerSecret(os.Args[2])
 
@@ -141,7 +191,12 @@ func main() {
 	config := Config{
 		image,
 		dir,
-		time.Duration(timeOutSec)*time.Second,
+		time.Duration(timeOutSec) * time.Second,
+	}
+	shellgeiPerMinutes, err := strconv.Atoi(os.Args[7])
+	if err != nil {
+		log.Println(err)
+		return
 	}
 
 	v := url.Values{}
@@ -158,17 +213,36 @@ func main() {
 		switch tweet := t.(type) {
 		case anaconda.Tweet:
 			go func() {
+				if tweet.Retweeted {
+					return
+				}
 				is, text := IsShellGeiTweet(tweet.Text)
 				if !is {
 					return
 				}
 				if self.Id == tweet.User.Id {
+					log.Println("self shellgei")
+					return
+				}
+				if AlreadyDone(db, tweet) {
+					log.Println("already done shellgei")
 					return
 				}
 				text = html.UnescapeString(text)
 				text = RemoveMentionSymbol(self, text)
+				cnt, err := RecentShellgeiCount(db, 60, tweet)
+				InsertShellGei(db, tweet)
+				if err != nil {
+					log.Println(err)
+					return
+				}
+				if cnt > shellgeiPerMinutes {
+					log.Println("too many shellgeis")
+					return
+				}
 				result, err := DoShellGei(config, text)
 				if err != nil {
+					log.Println(err)
 					return
 				}
 				if len(result) == 0 {
