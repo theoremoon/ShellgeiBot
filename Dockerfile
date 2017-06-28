@@ -11,12 +11,15 @@ RUN apt-get update -y && apt-get install -y \
 	    language-pack-ja \
 	    pwgen \
 	    bc \
-	    perl
+	    perl \
+	    toilet \
+	    figlet
 	     
 RUN gem install cureutils
 RUN gem install matsuya
 
-ENV PATH $PATH:/root/.egison/bin:/root/.cabal/bin
+
+ENV LANG ja_JP.UTF-8
 WORKDIR /
 
 CMD ["bash"]

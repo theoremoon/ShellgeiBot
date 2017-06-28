@@ -99,11 +99,10 @@ func TweetUrl(tweet anaconda.Tweet) string {
 }
 
 func Tweetable(text string, postfix string) string {
-	l := len(postfix)
-	if len(text) < 140-l {
+	if len(text) < 116 {
 		return text + postfix
 	}
-	return text[:140-l] + postfix
+	return text[:116] + postfix
 }
 
 func TweetResult(api *anaconda.TwitterApi, tweet anaconda.Tweet, result string) error {
