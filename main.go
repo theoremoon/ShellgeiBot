@@ -98,18 +98,18 @@ func TweetUrl(tweet anaconda.Tweet) string {
 	return "https://twitter.com/" + tweet.User.ScreenName + "/status/" + tweet.IdStr
 }
 
-func Tweetable(text string, postfix string) string {
-	if len(text) < 116 {
-		return text + postfix
+func Tweetable(text string) string {
+	if len(text) < 140 {
+		return text
 	}
-	return text[:116] + postfix
+	return text[:140]
 }
 
 func TweetResult(api *anaconda.TwitterApi, tweet anaconda.Tweet, result string) error {
 	/// post done message
 	v := url.Values{}
-	postfix := " " + TweetUrl(tweet)
-	_, err := api.PostTweet(Tweetable(result, postfix), v)
+	v.Set("attachment_url", TweetUrl(tweet))
+	_, err := api.PostTweet(Tweetable(result), v)
 	if err != nil {
 		return err
 	}
