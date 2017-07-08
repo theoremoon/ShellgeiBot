@@ -1,6 +1,6 @@
 FROM ubuntu:latest
 
-RUN apt-get update -y && apt-get install -y \
+RUN apt-get update -y --allow-unauthenticated && apt-get install -y \
 	    ruby \
 	    jq \
 	    vim \
@@ -18,17 +18,23 @@ RUN apt-get update -y && apt-get install -y \
 	    libncurses5-dev \
 	    git \
 	    build-essential \
-	    mecab libmecab-dev mecab-ipadic mecab-ipadic-utf8 python-mecab 
+	    mecab libmecab-dev mecab-ipadic mecab-ipadic-utf8 python-mecab \
+	    wget curl nodejs npm \
+	    fortunes  cowsay \
+	    datamash
 
-
-RUN gem install cureutils
-RUN gem install matsuya
+RUN gem install cureutils matsuya takarabako snacknomama rubipara
 
 RUN cabal update && cabal install egison
 RUN git clone https://github.com/greymd/egzact.git
 WORKDIR egzact
 RUN make install
 WORKDIR /
+
+RUN npm cache clean && npm install n -g
+RUN n stable
+RUN ln -sf /usr/local/bin/node /usr/bin/node
+RUN npm install -g faker-cli
 
 RUN git clone https://github.com/fumiyas/home-commands.git
 RUN rm /home-commands/README.md
