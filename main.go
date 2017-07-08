@@ -44,7 +44,7 @@ func DoShellGei(c Config, script string) (string, error) {
 		return "", err
 	}
 
-	cmd := exec.Command("docker", "run", "--name", scriptFileName, "-v", scriptFilePath+":/"+scriptFileName, c.Image, "bash", "/"+scriptFileName)
+	cmd := exec.Command("docker", "run", "--net=none", "--name", scriptFileName, "-v", scriptFilePath+":/"+scriptFileName, c.Image, "bash", "/"+scriptFileName)
 	defer func() {
 		cmd := exec.Command("docker", "stop", scriptFileName)
 		cmd.Run()
