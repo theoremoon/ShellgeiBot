@@ -23,7 +23,6 @@ RUN apt-get update -y && apt-get install -y fortunes  cowsay
 RUN apt-get update -y && apt-get install -y datamash
 RUN apt-get update -y && apt-get install -y gawk
 
-
 RUN gem install cureutils matsuya takarabako snacknomama rubipara
 
 RUN cabal update && cabal install egison
@@ -43,8 +42,14 @@ RUN rm /home-commands/README.md
 RUN wget http://www.jsoftware.com/download/j805/install/j805_linux64.tar.gz && tar xvzf j805_linux64.tar.gz
 ENV PATH $PATH:/j64-805/bin
 
+RUN wget https://github.com/noborus/trdsql/releases/download/v0.3.3/trdsql_linux_amd64.zip && unzip trdsql_linux_amd64.zip
+ENV PATH $PATH:/trdsql_linux_amd64
+
 ENV LANG ja_JP.UTF-8
 ENV PATH $PATH:/root/.cabal/bin:/root/.egison/bin:/home-commands
+
+RUN git clone https://github.com/greymd/super_unko.git
+ENV PATH $PATH:/super_unko
 
 
 CMD ["bash"]
