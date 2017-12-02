@@ -1,72 +1,54 @@
+// +build !test
+
 package main
 
 import (
-	"encoding/json"
-	"fmt"
-	"io/ioutil"
+	"database/sql"
+	"github.com/ChimeraCoder/anaconda"
+	_ "github.com/mattn/go-sqlite3"
+	"html"
 	"log"
+	"net/url"
 	"os"
-	"path/filepath"
-	"time"
 )
 
-type BotConfigJson struct {
-	DockerImage string `json:"dockerimage"`
-	Workdir     string `json:"workdir"`
-	Timeout     string `json:"timeout"`
-}
-
-type BotConfig struct {
-	DockerImage string
-	Workdir     string
-	Timeout     time.Duration
-}
-
-type TwitterKeys struct {
-	ConsumerKey    string `json:"ConsumerKey"`
-	ConsumerSecret string `json:"ConsumerSecret"`
-	AccessToken    string `json:"AccessToken"`
-	AccessSecret   string `json:"AccessSecret"`
-}
-
-func ParseBotConfig(file string) (BotConfig, error) {
-	var c BotConfigJson
-	var config BotConfig
-
-	// read json
-	raw, err := ioutil.ReadFile(file)
-	if err != nil {
-		return config, err
+func ProcessTweet(tweet anaconda.Tweet, self anaconda.User, api *anaconda.TwitterApi, db *sql.DB, botConfig BotConfig) {
+	// check valid shellgei tweet
+	if tweet.RetweetedStatus != nil {
+		return
 	}
-	err = json.Unmarshal(raw, &c)
-	if err != nil {
-		return config, err
+	is, text := IsShellGeiTweet(tweet.Text)
+	if !is {
+		return
+	}
+	if self.Id == tweet.User.Id {
+		return
+	}
+	if !IsFollower(api, tweet) {
+		return
 	}
 
-	// convert json to config type
-	config.DockerImage = c.DockerImage
-	config.Workdir, err = filepath.Abs(c.Workdir)
-	if err != nil {
-		return config, err
-	}
-	config.Timeout, err = time.ParseDuration(c.Timeout)
-	if err != nil {
-		return config, err
-	}
-	return config, nil
-}
+	// pre-process  for shellgei
+	_ = InsertShellGei(db, tweet)
+	text = html.UnescapeString(text)
+	text = RemoveMentionSymbol(self, text)
 
-func ParseTwitterKey(file string) (TwitterKeys, error) {
-	var k TwitterKeys
-	raw, err := ioutil.ReadFile(file)
+	result, err := RunCmd(text, botConfig)
 	if err != nil {
-		return k, err
+		if err.(*StdError) == nil {
+			_, _ = api.PostTweet("@theoldmoon0602 internal error", url.Values{})
+		}
+		_ = InsertError(db, err, text)
+		return
 	}
-	err = json.Unmarshal(raw, &k)
+	if len(result) == 0 {
+		return
+	}
+	err = TweetResult(api, tweet, MakeTweetable(result))
 	if err != nil {
-		return k, err
+		log.Println(err)
 	}
-	return k, nil
+	return
 }
 
 func main() {
@@ -79,12 +61,38 @@ func main() {
 		log.Fatal(err)
 	}
 
-	botConfig, err := ParseBotConfig(os.Args[2])
+	db, err := sql.Open("sqlite3", "./database.db")
+	if err != nil {
+		log.Fatal(err)
+	}
+	_, _ = db.Exec(Schema)
+	_, _ = db.Exec(Schema2)
+
+	anaconda.SetConsumerKey(twitterKey.ConsumerKey)
+	anaconda.SetConsumerSecret(twitterKey.ConsumerSecret)
+	api := anaconda.NewTwitterApi(twitterKey.AccessToken, twitterKey.AccessSecret)
+
+	v := url.Values{}
+	self, err := api.GetSelf(v)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	fmt.Println(twitterKey.ConsumerSecret)
-	fmt.Println(botConfig.Timeout)
-	fmt.Println(botConfig.Workdir)
+	stream := api.UserStream(v)
+	for {
+		t := <-stream.C
+		switch tweet := t.(type) {
+		case anaconda.Tweet:
+			botConfig, err := ParseBotConfig(os.Args[2])
+			if err != nil {
+				_, _ = api.PostTweet("@theoldmoon0602 Internal error", v)
+				log.Fatal(err)
+			}
+
+			go func() {
+				ProcessTweet(tweet, self, api, db, botConfig)
+			}()
+		}
+
+	}
 }
