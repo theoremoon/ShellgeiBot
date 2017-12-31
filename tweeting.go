@@ -60,14 +60,15 @@ func TweetResult(api *anaconda.TwitterApi, tweet anaconda.Tweet, result string) 
 	return err
 }
 
-func IsShellGeiTweet(tweet string) (bool, string) {
-	tags := []string{"#シェル芸", "#危険シェル芸"}
+func IsShellGeiTweet(tweet string, tags []string) (bool, string) {
+	flag := false
 	for _, t := range tags {
 		if strings.Contains(tweet, t) {
-			return true, strings.Replace(tweet, t, "", -1)
+			flag = true
+			tweet = strings.Replace(tweet, t, "", -1)
 		}
 	}
-	return false, ""
+	return flag, tweet
 }
 
 func RemoveMentionSymbol(self anaconda.User, tweet string) string {

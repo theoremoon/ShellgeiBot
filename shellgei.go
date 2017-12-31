@@ -14,15 +14,17 @@ import (
 )
 
 type BotConfigJson struct {
-	DockerImage string `json:"dockerimage"`
-	Workdir     string `json:"workdir"`
-	Timeout     string `json:"timeout"`
+	DockerImage string   `json:"dockerimage"`
+	Workdir     string   `json:"workdir"`
+	Timeout     string   `json:"timeout"`
+	Tags        []string `json:"tags"`
 }
 
 type BotConfig struct {
 	DockerImage string
 	Workdir     string
 	Timeout     time.Duration
+	Tags        []string
 }
 
 func ParseBotConfig(file string) (BotConfig, error) {
@@ -49,6 +51,7 @@ func ParseBotConfig(file string) (BotConfig, error) {
 	if err != nil {
 		return config, err
 	}
+	config.Tags = c.Tags
 	return config, nil
 }
 

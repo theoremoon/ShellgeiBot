@@ -17,7 +17,7 @@ func ProcessTweet(tweet anaconda.Tweet, self anaconda.User, api *anaconda.Twitte
 	if tweet.RetweetedStatus != nil {
 		return
 	}
-	is, text := IsShellGeiTweet(tweet.Text)
+	is, text := IsShellGeiTweet(tweet.Text, botConfig.Tags)
 	if !is {
 		return
 	}
@@ -38,7 +38,10 @@ func ProcessTweet(tweet anaconda.Tweet, self anaconda.User, api *anaconda.Twitte
 		if err.(*StdError) == nil {
 			_, _ = api.PostTweet("@theoldmoon0602 internal error", url.Values{})
 		}
-		_ = InsertError(db, err, text)
+		err = InsertError(db, err, text)
+		if err != nil {
+			log.Println(err)
+		}
 		return
 	}
 	if len(result) == 0 {
