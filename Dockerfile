@@ -1,4 +1,4 @@
-FROM ubuntu:latest
+FROM ubuntu:18.04
 
 RUN apt-get update -y && apt-get install -y ruby \
  jq\
@@ -26,8 +26,20 @@ RUN apt-get update -y && apt-get install -y ruby \
  zsh\
  num-utils\
  apache2-utils\
- fish
-
+ fish\
+ cowsay\
+ imagemagick\
+ moreutils\
+ strace\
+ whiptail\
+ pandoc\
+ postgresql-common\
+ postgresql-client-10\
+ icu-devtools\
+ tcsh\
+ libskk-dev\
+ libkkc-utils\
+ morse-simulator
 
 RUN gem install cureutils matsuya takarabako snacknomama rubipara
 
@@ -63,7 +75,14 @@ ENV PATH $PATH:/root/.cabal/bin:/root/.egison/bin:/home-commands
 RUN git clone https://github.com/greymd/super_unko.git
 ENV PATH $PATH:/super_unko
 
-
 RUN npm install -g chemi
 
-CMD ["bash"]
+# RUN echo "local all all trust" > /etc/postgresql/10/main/pg_hba.conf
+
+ENV TZ JST-9
+
+RUN wget https://gist.githubusercontent.com/KeenS/6194e6ef1a151c9ea82536d5850b8bc7/raw/85af9ec757308b8ca4effdf24221f642cb34703b/nameko.svg
+
+RUN wget https://dl.google.com/go/go1.9.4.linux-amd64.tar.gz && tar xzf go1.9.4.linux-amd64.tar.gz -C /usr/local && rm go1.9.4.linux-amd64.tar.gz
+ENV PATH $PATH:/usr/local/go/bin
+CMD bash
