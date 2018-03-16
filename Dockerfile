@@ -39,7 +39,8 @@ RUN apt-get update -y && apt-get install -y ruby \
  tcsh\
  libskk-dev\
  libkkc-utils\
- morse-simulator
+ morsegen\
+ dc
 
 RUN gem install cureutils matsuya takarabako snacknomama rubipara
 
@@ -85,4 +86,8 @@ RUN wget https://gist.githubusercontent.com/KeenS/6194e6ef1a151c9ea82536d5850b8b
 
 RUN wget https://dl.google.com/go/go1.9.4.linux-amd64.tar.gz && tar xzf go1.9.4.linux-amd64.tar.gz -C /usr/local && rm go1.9.4.linux-amd64.tar.gz
 ENV PATH $PATH:/usr/local/go/bin
+
+RUN git clone https://github.com/hostilefork/whitespacers.git && cp /whitespacers/ruby/whitespace.rb /usr/local/bin/whitespace && chmod a+x /usr/local/bin/whitespace && rm -rf /whitespacers
+
+
 CMD bash
