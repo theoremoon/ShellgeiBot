@@ -6,9 +6,8 @@ import (
 	"database/sql"
 	"github.com/ChimeraCoder/anaconda"
 	_ "github.com/mattn/go-sqlite3"
-	"html"
-	"log"
 	"net/url"
+	"log"
 	"os"
 )
 
@@ -17,7 +16,7 @@ func ProcessTweet(tweet anaconda.Tweet, self anaconda.User, api *anaconda.Twitte
 	if tweet.RetweetedStatus != nil {
 		return
 	}
-	is, text := IsShellGeiTweet(tweet.Text, botConfig.Tags)
+	is := IsShellGeiTweet(tweet.Text, botConfig.Tags)
 	if !is {
 		return
 	}
@@ -28,10 +27,10 @@ func ProcessTweet(tweet anaconda.Tweet, self anaconda.User, api *anaconda.Twitte
 		return
 	}
 
+	text := ExtractShellgei(tweet, self, api, botConfig.Tags)
+
 	// pre-process  for shellgei
-	_ = InsertShellGei(db, tweet)
-	text = html.UnescapeString(text)
-	text = RemoveMentionSymbol(self, text)
+	_ = InsertShellGei(db, tweet, text)
 
 	result, err := RunCmd(text, botConfig)
 	if err != nil {

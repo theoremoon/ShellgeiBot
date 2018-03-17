@@ -26,12 +26,12 @@ func InsertError(db *sql.DB, err error, text string) error {
 	return err2
 }
 
-func InsertShellGei(db *sql.DB, tweet anaconda.Tweet) error {
+func InsertShellGei(db *sql.DB, tweet anaconda.Tweet, text string) error {
 	now, err := tweet.CreatedAtTime()
 	if err != nil {
 		return err
 	}
-	_, err = db.Exec("insert into shellgeis(user_id, tweet_id, shellgei, timestamp) values (?,?,?,?)", tweet.User.IdStr, tweet.Id, tweet.Text, now.Unix())
+	_, err = db.Exec("insert into shellgeis(user_id, tweet_id, shellgei, timestamp) values (?,?,?,?)", tweet.User.IdStr, tweet.Id, text, now.Unix())
 	if err != nil {
 		return err
 	}

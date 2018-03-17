@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"github.com/ChimeraCoder/anaconda"
+	"html"
 	"io/ioutil"
 	"net/url"
 	"strings"
@@ -14,6 +15,29 @@ type TwitterKeys struct {
 	ConsumerSecret string `json:"ConsumerSecret"`
 	AccessToken    string `json:"AccessToken"`
 	AccessSecret   string `json:"AccessSecret"`
+}
+
+func ExtractShellgei(tweet anaconda.Tweet, self anaconda.User, api *anaconda.TwitterApi, tags []string) string {
+	text := tweet.Text
+	text = html.UnescapeString(text)
+	text = RemoveMentionSymbol(self, text)
+
+	for _, t := range tags {
+		text = strings.Replace(text, t, "", -1)
+	}
+
+	if len(tweet.Entities.Urls) == 0 {
+		return text
+	}
+
+	v := url.Values{}
+	quoted, err := api.GetTweet(tweet.QuotedStatusID, v)
+	if err != nil {
+		return text
+	}
+
+	text = ExtractShellgei(quoted, self, api, tags) + strings.Replace(text, tweet.Entities.Urls[0].Url, "", -1)
+	return text
 }
 
 func ParseTwitterKey(file string) (TwitterKeys, error) {
@@ -60,15 +84,15 @@ func TweetResult(api *anaconda.TwitterApi, tweet anaconda.Tweet, result string) 
 	return err
 }
 
-func IsShellGeiTweet(tweet string, tags []string) (bool, string) {
+func IsShellGeiTweet(tweet string, tags []string) bool {
 	flag := false
 	for _, t := range tags {
 		if strings.Contains(tweet, t) {
 			flag = true
-			tweet = strings.Replace(tweet, t, "", -1)
+			break
 		}
 	}
-	return flag, tweet
+	return flag
 }
 
 func RemoveMentionSymbol(self anaconda.User, tweet string) string {
