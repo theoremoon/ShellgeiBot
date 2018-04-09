@@ -18,7 +18,7 @@ type TwitterKeys struct {
 }
 
 func ExtractShellgei(tweet anaconda.Tweet, self anaconda.User, api *anaconda.TwitterApi, tags []string) string {
-	text := tweet.Text
+	text := tweet.FullText
 	text = html.UnescapeString(text)
 	text = RemoveMentionSymbol(self, text)
 
