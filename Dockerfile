@@ -40,7 +40,9 @@ RUN apt-get update -y && apt-get install -y ruby \
  libskk-dev\
  libkkc-utils\
  morsegen\
- dc
+ dc\
+ telnet\
+ python3-pip
 
 RUN gem install cureutils matsuya takarabako snacknomama rubipara
 
@@ -89,5 +91,20 @@ ENV PATH $PATH:/usr/local/go/bin
 
 RUN git clone https://github.com/hostilefork/whitespacers.git && cp /whitespacers/ruby/whitespace.rb /usr/local/bin/whitespace && chmod a+x /usr/local/bin/whitespace && rm -rf /whitespacers
 
+RUN git clone https://github.com/ryuichiueda/ShellGeiData
+
+ENV GOPATH /root/go 
+ENV PATH $PATH:/root/go/bin
+RUN mkdir /root/go
+RUN go get -u github.com/YuheiNakasaka/sayhuuzoku && ln -s /root/go/src/github.com/YuheiNakasaka/sayhuuzoku/db /
+
+RUN pip3 install yq
+RUN go get -u github.com/tomnomnom/gron
+RUN pip3 install faker
+
+RUN git clone https://github.com/usp-engineers-community/Open-usp-Tukubai
+WORKDIR /Open-usp-Tukubai
+RUN make install
+WORKDIR /
 
 CMD bash
