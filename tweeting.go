@@ -25,6 +25,7 @@ func ExtractShellgei(tweet anaconda.Tweet, self anaconda.User, api *anaconda.Twi
 	for _, t := range tags {
 		text = strings.Replace(text, t, "", -1)
 	}
+	text = strings.TrimSpace(text)
 
 	if len(tweet.Entities.Urls) == 0 {
 		return text
