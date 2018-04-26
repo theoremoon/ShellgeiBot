@@ -29,7 +29,13 @@ func ProcessTweet(tweet anaconda.Tweet, self anaconda.User, api *anaconda.Twitte
 	}
 
 	text := ExtractShellgei(tweet, self, api, botConfig.Tags)
-	InsertShellGei(db, tweet.User.Id, tweet.User.ScreenName, tweet.Id, text, tweet.CreatedAt)
+  t, err := tweet.CreatedAtTime()
+  if err != nil{
+    log.Println(err)
+    return
+  }
+
+	InsertShellGei(db, tweet.User.Id, tweet.User.ScreenName, tweet.Id, text, t.Unix())
 
 	result, err := RunCmd(text, botConfig)
 	InsertResult(db, tweet.Id, result, err)
