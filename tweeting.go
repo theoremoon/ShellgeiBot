@@ -30,6 +30,9 @@ func ExtractShellgei(tweet anaconda.Tweet, self anaconda.User, api *anaconda.Twi
 	if len(tweet.Entities.Urls) == 0 {
 		return text
 	}
+  if tweet.QuotedStatusID == tweet.Id {
+    return text
+  }
 
 	v := url.Values{}
 	quoted, err := api.GetTweet(tweet.QuotedStatusID, v)
