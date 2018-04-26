@@ -42,7 +42,9 @@ RUN apt-get update -y && apt-get install -y ruby \
  morsegen\
  dc\
  telnet\
- python3-pip
+ python3-pip\
+ busybox\
+ parallel
 
 RUN gem install cureutils matsuya takarabako snacknomama rubipara
 
