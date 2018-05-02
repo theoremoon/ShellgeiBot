@@ -109,4 +109,6 @@ WORKDIR /Open-usp-Tukubai
 RUN make install
 WORKDIR /
 
+RUN wget -O julia.tar.gz https://julialang-s3.julialang.org/bin/linux/x64/0.6/julia-0.6.2-linux-x86_64.tar.gz && tar xf julia.tar.gz && rm julia.tar.gz &&  ln -s $(realpath $(ls | grep -E "^julia") )/bin/julia /usr/local/bin/julia 
+
 CMD bash
