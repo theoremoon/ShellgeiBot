@@ -1,109 +1,35 @@
 package main
 
 import (
-	"encoding/json"
-	"github.com/ChimeraCoder/anaconda"
-	"html"
-	"io/ioutil"
-	"net/url"
-	"strings"
-	"unicode"
+	"database/sql"
+	_ "github.com/mattn/go-sqlite3"
 )
 
-type TwitterKeys struct {
-	ConsumerKey    string `json:"ConsumerKey"`
-	ConsumerSecret string `json:"ConsumerSecret"`
-	AccessToken    string `json:"AccessToken"`
-	AccessSecret   string `json:"AccessSecret"`
-}
+const Schema = `
+create table if not exists shellgeis (
+	user_id integer,
+	screen_name text,
+	tweet_id integer,
+	shellgei text,
+	result text default "",
+	error text default "",
+	timestamp string
+);
+`
 
-func ExtractShellgei(tweet anaconda.Tweet, self anaconda.User, api *anaconda.TwitterApi, tags []string) string {
-	text := tweet.FullText
-	text = html.UnescapeString(text)
-	text = RemoveMentionSymbol(self, text)
-
-	for _, t := range tags {
-		text = strings.Replace(text, t, "", -1)
-	}
-
-	if len(tweet.Entities.Urls) == 0 {
-		return text
-	}
-
-	v := url.Values{}
-	quoted, err := api.GetTweet(tweet.QuotedStatusID, v)
+func InsertResult(db *sql.DB, tweet_id int64, result string, err error) error {
+	err_str := ""
 	if err != nil {
-		return text
+		err_str = err.Error()
 	}
-
-	text = ExtractShellgei(quoted, self, api, tags) + strings.Replace(text, tweet.Entities.Urls[0].Url, "", -1)
-	return text
+	_, err2 := db.Exec("update shellgeis set result=?, error=? where tweet_id=?", result, err_str, tweet_id)
+	return err2
 }
 
-func ParseTwitterKey(file string) (TwitterKeys, error) {
-	var k TwitterKeys
-	raw, err := ioutil.ReadFile(file)
+func InsertShellGei(db *sql.DB, user_id int64, screen_name string, tweet_id int64, shellgei string, timestamp int64) error {
+	_, err := db.Exec("insert into shellgeis(user_id, screen_name, tweet_id, shellgei, timestamp) values (?,?,?,?,?)", user_id, screen_name, tweet_id, shellgei, timestamp)
 	if err != nil {
-		return k, err
+		return err
 	}
-	err = json.Unmarshal(raw, &k)
-	if err != nil {
-		return k, err
-	}
-	return k, nil
-}
-
-func MakeTweetable(text string) string {
-	a := []rune(text)
-	i := 0
-	l := 0
-	for ; i < len(a); i++ {
-		if unicode.Is(unicode.Latin, a[i]) || unicode.IsSpace(a[i]) {
-			l++
-		} else {
-			l += 2
-		}
-		if l > 280 {
-			i--
-			break
-		}
-	}
-	return string(a[:i])
-}
-
-func TweetUrl(tweet anaconda.Tweet) string {
-	return "https://twitter.com/" + tweet.User.ScreenName + "/status/" + tweet.IdStr
-}
-
-func TweetResult(api *anaconda.TwitterApi, tweet anaconda.Tweet, result string) error {
-	/// post done message
-	v := url.Values{}
-	v.Set("tweet_mode", "extended")
-	v.Set("attachment_url", TweetUrl(tweet))
-	_, err := api.PostTweet(result, v)
-	return err
-}
-
-func IsShellGeiTweet(tweet string, tags []string) bool {
-	flag := false
-	for _, t := range tags {
-		if strings.Contains(tweet, t) {
-			flag = true
-			break
-		}
-	}
-	return flag
-}
-
-func RemoveMentionSymbol(self anaconda.User, tweet string) string {
-	return strings.Replace(tweet, "@"+self.ScreenName, "", -1)
-}
-
-func IsFollower(api *anaconda.TwitterApi, tweet anaconda.Tweet) bool {
-	v := url.Values{}
-	u, err := api.GetUsersShowById(tweet.User.Id, v)
-	if err != nil {
-		return false
-	}
-	return u.Following
+	return nil
 }
