@@ -40,7 +40,12 @@ RUN apt-get update -y && apt-get install -y ruby \
  libskk-dev\
  libkkc-utils\
  morsegen\
- dc
+ dc\
+ telnet\
+ python3-pip\
+ python-pip\
+ busybox\
+ parallel
 
 RUN gem install cureutils matsuya takarabako snacknomama rubipara
 
@@ -89,5 +94,28 @@ ENV PATH $PATH:/usr/local/go/bin
 
 RUN git clone https://github.com/hostilefork/whitespacers.git && cp /whitespacers/ruby/whitespace.rb /usr/local/bin/whitespace && chmod a+x /usr/local/bin/whitespace && rm -rf /whitespacers
 
+RUN git clone https://github.com/ryuichiueda/ShellGeiData
+
+ENV GOPATH /root/go 
+ENV PATH $PATH:/root/go/bin
+RUN mkdir /root/go
+RUN go get -u github.com/YuheiNakasaka/sayhuuzoku && ln -s /root/go/src/github.com/YuheiNakasaka/sayhuuzoku/db /
+
+RUN pip3 install yq
+RUN go get -u github.com/tomnomnom/gron
+RUN pip3 install faker
+
+RUN git clone https://github.com/usp-engineers-community/Open-usp-Tukubai
+WORKDIR /Open-usp-Tukubai
+RUN make install
+WORKDIR /
+
+RUN wget -O julia.tar.gz https://julialang-s3.julialang.org/bin/linux/x64/0.6/julia-0.6.2-linux-x86_64.tar.gz && tar xf julia.tar.gz && rm julia.tar.gz &&  ln -s $(realpath $(ls | grep -E "^julia") )/bin/julia /usr/local/bin/julia 
+
+RUN curl https://sh.rustup.rs -sSf | sh -s -- -y
+ENV PATH /root/.cargo/bin:$PATH
+
+RUN pip3 install sympy numpy scipy
+RUN pip install sympy numpy scipy
 
 CMD bash
