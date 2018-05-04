@@ -18,17 +18,21 @@ type TwitterKeys struct {
 }
 
 func ExtractShellgei(tweet anaconda.Tweet, self anaconda.User, api *anaconda.TwitterApi, tags []string) string {
-	text := tweet.Text
+	text := tweet.FullText
 	text = html.UnescapeString(text)
 	text = RemoveMentionSymbol(self, text)
 
 	for _, t := range tags {
 		text = strings.Replace(text, t, "", -1)
 	}
+	text = strings.TrimSpace(text)
 
 	if len(tweet.Entities.Urls) == 0 {
 		return text
 	}
+  if tweet.QuotedStatusID == tweet.Id {
+    return text
+  }
 
 	v := url.Values{}
 	quoted, err := api.GetTweet(tweet.QuotedStatusID, v)

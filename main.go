@@ -12,11 +12,12 @@ import (
 )
 
 func ProcessTweet(tweet anaconda.Tweet, self anaconda.User, api *anaconda.TwitterApi, db *sql.DB, botConfig BotConfig) {
+
 	// check valid shellgei tweet
 	if tweet.RetweetedStatus != nil {
 		return
 	}
-	is := IsShellGeiTweet(tweet.Text, botConfig.Tags)
+	is := IsShellGeiTweet(tweet.FullText, botConfig.Tags)
 	if !is {
 		return
 	}
@@ -28,24 +29,28 @@ func ProcessTweet(tweet anaconda.Tweet, self anaconda.User, api *anaconda.Twitte
 	}
 
 	text := ExtractShellgei(tweet, self, api, botConfig.Tags)
+  t, err := tweet.CreatedAtTime()
+  if err != nil{
+    log.Println(err)
+    return
+  }
 
-	// pre-process  for shellgei
-	_ = InsertShellGei(db, tweet, text)
+	InsertShellGei(db, tweet.User.Id, tweet.User.ScreenName, tweet.Id, text, t.Unix())
 
 	result, err := RunCmd(text, botConfig)
+	InsertResult(db, tweet.Id, result, err)
+
 	if err != nil {
 		if err.(*StdError) == nil {
 			_, _ = api.PostTweet("@theoldmoon0602 internal error", url.Values{})
 		}
-		err = InsertError(db, err, text)
-		if err != nil {
-			log.Println(err)
-		}
 		return
 	}
+
 	if len(result) == 0 {
 		return
 	}
+
 	err = TweetResult(api, tweet, MakeTweetable(result))
 	if err != nil {
 		log.Println(err)
@@ -68,7 +73,6 @@ func main() {
 		log.Fatal(err)
 	}
 	_, _ = db.Exec(Schema)
-	_, _ = db.Exec(Schema2)
 
 	anaconda.SetConsumerKey(twitterKey.ConsumerKey)
 	anaconda.SetConsumerSecret(twitterKey.ConsumerSecret)
