@@ -1,5 +1,6 @@
 FROM ubuntu:18.04
 
+ENV DEBIAN_FRONTEND noninteractive
 RUN apt-get update -y && apt-get install -y ruby \
  jq\
  vim\
@@ -19,7 +20,7 @@ RUN apt-get update -y && apt-get install -y ruby \
  build-essential\
  mecab libmecab-dev mecab-ipadic mecab-ipadic-utf8 python-mecab\
  wget curl nodejs npm\
- fortunes  cowsay\
+ bsdgames fortunes cowsay fortunes-off cowsay-off\
  datamash\
  gawk\
  libxml2-utils\
@@ -45,7 +46,12 @@ RUN apt-get update -y && apt-get install -y ruby \
  python3-pip\
  python-pip\
  busybox\
- parallel
+ parallel\
+ rename\
+ mt-st\
+ ffmpeg\
+ kakasi\
+ dateutils
 
 RUN gem install cureutils matsuya takarabako snacknomama rubipara
 
@@ -94,7 +100,6 @@ ENV PATH $PATH:/usr/local/go/bin
 
 RUN git clone https://github.com/hostilefork/whitespacers.git && cp /whitespacers/ruby/whitespace.rb /usr/local/bin/whitespace && chmod a+x /usr/local/bin/whitespace && rm -rf /whitespacers
 
-RUN git clone https://github.com/ryuichiueda/ShellGeiData
 
 ENV GOPATH /root/go 
 ENV PATH $PATH:/root/go/bin
@@ -117,5 +122,13 @@ ENV PATH /root/.cargo/bin:$PATH
 
 RUN pip3 install sympy numpy scipy
 RUN pip install sympy numpy scipy
+
+RUN pip3 install xonsh
+
+ENV LANG ja_JP.UTF-8
+
+RUN git clone https://github.com/ryuichiueda/ShellGeiData
+
+RUN wget https://raintrees.net/attachments/download/472/EncodeZeroWidthSpace.sh && chmod a+x ./EncodeZeroWidthSpace.sh && wget https://raintrees.net/attachments/download/473/DecodeZeroWidthSpace.sh && chmod a+x ./DecodeZeroWidthSpace.sh
 
 CMD bash
