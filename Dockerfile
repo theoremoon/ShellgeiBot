@@ -51,7 +51,8 @@ RUN apt-get update -y && apt-get install -y ruby \
  mt-st\
  ffmpeg\
  kakasi\
- dateutils
+ dateutils\
+ fonts-ipafont fonts-vlgothic
 
 RUN gem install cureutils matsuya takarabako snacknomama rubipara
 
@@ -130,5 +131,7 @@ ENV LANG ja_JP.UTF-8
 RUN git clone https://github.com/ryuichiueda/ShellGeiData
 
 RUN wget https://raintrees.net/attachments/download/472/EncodeZeroWidthSpace.sh && chmod a+x ./EncodeZeroWidthSpace.sh && wget https://raintrees.net/attachments/download/473/DecodeZeroWidthSpace.sh && chmod a+x ./DecodeZeroWidthSpace.sh
+
+ENV PATH /usr/games:$PATH
 
 CMD bash
