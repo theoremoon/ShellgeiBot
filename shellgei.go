@@ -1,135 +1,162 @@
 package main
 
 import (
-  "bytes"
-  "context"
-  "crypto/rand"
-  "encoding/json"
-  "fmt"
-  "io/ioutil"
-  "os"
-  "os/exec"
-  "path/filepath"
-  "time"
+	"bytes"
+	"context"
+	"crypto/rand"
+	"encoding/base64"
+	"encoding/json"
+	"fmt"
+	"io/ioutil"
+	"log"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"time"
 )
 
 type BotConfigJson struct {
-  DockerImage string   `json:"dockerimage"`
-  Workdir     string   `json:"workdir"`
-  Timeout     string   `json:"timeout"`
-  Tags        []string `json:"tags"`
+	DockerImage string   `json:"dockerimage"`
+	Workdir     string   `json:"workdir"`
+	Timeout     string   `json:"timeout"`
+	Tags        []string `json:"tags"`
 }
 
 type BotConfig struct {
-  DockerImage string
-  Workdir     string
-  Timeout     time.Duration
-  Tags        []string
+	DockerImage string
+	Workdir     string
+	Timeout     time.Duration
+	Tags        []string
 }
 
 func ParseBotConfig(file string) (BotConfig, error) {
-  var c BotConfigJson
-  var config BotConfig
+	var c BotConfigJson
+	var config BotConfig
 
-  // read json
-  raw, err := ioutil.ReadFile(file)
-  if err != nil {
-    return config, err
-  }
-  err = json.Unmarshal(raw, &c)
-  if err != nil {
-    return config, err
-  }
+	// read json
+	raw, err := ioutil.ReadFile(file)
+	if err != nil {
+		return config, err
+	}
+	err = json.Unmarshal(raw, &c)
+	if err != nil {
+		return config, err
+	}
 
-  // convert json to config type
-  config.DockerImage = c.DockerImage
-  config.Workdir, err = filepath.Abs(c.Workdir)
-  if err != nil {
-    return config, err
-  }
-  config.Timeout, err = time.ParseDuration(c.Timeout)
-  if err != nil {
-    return config, err
-  }
-  config.Tags = c.Tags
-  return config, nil
+	// convert json to config type
+	config.DockerImage = c.DockerImage
+	config.Workdir, err = filepath.Abs(c.Workdir)
+	if err != nil {
+		return config, err
+	}
+	config.Timeout, err = time.ParseDuration(c.Timeout)
+	if err != nil {
+		return config, err
+	}
+	config.Tags = c.Tags
+	return config, nil
 }
 
 func RandStr(length int) (string, error) {
-  const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-  randstr := make([]byte, 0, length)
-  keys := make([]byte, length)
-  _, err := rand.Read(keys)
-  if err != nil {
-    return "", err
-  }
-  for _, v := range keys {
-    k := int(v) % len(chars)
-    randstr = append(randstr, chars[k])
-  }
+	const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	randstr := make([]byte, 0, length)
+	keys := make([]byte, length)
+	_, err := rand.Read(keys)
+	if err != nil {
+		return "", err
+	}
+	for _, v := range keys {
+		k := int(v) % len(chars)
+		randstr = append(randstr, chars[k])
+	}
 
-  return string(randstr), nil
+	return string(randstr), nil
 }
 
 type StdError struct {
-  Msg string
+	Msg string
 }
 
 func (e *StdError) Error() string {
-  return e.Msg
+	return e.Msg
 }
 
-func RunCmd(cmdstr string, botConfig BotConfig) (string, error) {
-  // create shellgei script file
-  name, err := RandStr(16)
-  if err != nil {
-    return "", err
-  }
+func RunCmd(cmdstr string, botConfig BotConfig) (string, string, error) {
+	// create shellgei script file
+	name, err := RandStr(16)
+	if err != nil {
+		return "", "", err
+	}
+	dirname := name + "__images"
 
-  path := filepath.Join(botConfig.Workdir, name)
-  file, err := os.Create(path)
-  if err != nil {
-    return "", fmt.Errorf("error: %s, directory permission denied?", err)
-  }
-  defer func() { _ = file.Close() }()
-  defer func() { _ = os.RemoveAll(path) }()
+	path := filepath.Join(botConfig.Workdir, name)
+	file, err := os.Create(path)
+	if err != nil {
+		return "", "", fmt.Errorf("error: %s, directory permission denied?", err)
+	}
+	defer func() { _ = file.Close() }()
+	defer func() { _ = os.RemoveAll(path) }()
 
-  _, err = file.WriteString(cmdstr)
-  if err != nil {
-    return "", fmt.Errorf("errors: %s, write failed", err)
-  }
+	imgdir_path := filepath.Join(botConfig.Workdir, dirname)
+	err = os.MkdirAll(imgdir_path, 0777)
+	if err != nil {
+		return "", "", fmt.Errorf("error: %s, could not create directory", err)
+	}
+	defer func() { _ = os.RemoveAll(imgdir_path) }()
 
-  // execute shellgei in the docker
-  cmd := exec.Command("docker", "run", "--net=none", "--rm", "--name", name, "-v", path+":/"+name, botConfig.DockerImage, "bash", "/"+name)
-  defer func() {
-    cmd := exec.Command("docker", "stop", name)
-    _ = cmd.Run()
-    cmd = exec.Command("docker", "rm", name)
-    _ = cmd.Run()
-  }()
+	_, err = file.WriteString(cmdstr)
+	if err != nil {
+		return "", "", fmt.Errorf("errors: %s, write failed", err)
+	}
 
-  // get result
-  var out bytes.Buffer
-  var stderr bytes.Buffer
-  cmd.Stdout = &out
-  cmd.Stderr = &stderr
+	// execute shellgei in the docker
+	cmd := exec.Command("docker", "run", "--net=none", "--rm", "--name", name, "-v", path+":/"+name, "-v", imgdir_path+":/images", botConfig.DockerImage, "bash", "/"+name)
+	defer func() {
+		cmd := exec.Command("docker", "stop", name)
+		_ = cmd.Run()
+		cmd = exec.Command("docker", "rm", name)
+		_ = cmd.Run()
+	}()
 
-  ctx := context.Background()
-  ctx, cancel := context.WithTimeout(ctx, botConfig.Timeout)
-  defer cancel()
+	// get result
+	var out bytes.Buffer
+	var stderr bytes.Buffer
+	cmd.Stdout = &out
+	cmd.Stderr = &stderr
 
-  errChan := make(chan error, 1)
-  go func(ctx context.Context) {
-    errChan <- cmd.Run()
-  }(ctx)
+	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(ctx, botConfig.Timeout)
+	defer cancel()
 
-  select {
-  case <-ctx.Done():
-    // do nothing
-  case err = <-errChan:
-    if err != nil {
-      return "", &StdError{fmt.Sprintf("err: %s -- execution error? %s ", err.Error(), stderr.String())}
-    }
-  }
-  return out.String(), nil
+	errChan := make(chan error, 1)
+	go func(ctx context.Context) {
+		errChan <- cmd.Run()
+	}(ctx)
+
+	select {
+	case <-ctx.Done():
+		// do nothing
+	case err = <-errChan:
+		if err != nil {
+			return "", "", &StdError{fmt.Sprintf("err: %s -- execution error? %s ", err.Error(), stderr.String())}
+		}
+	}
+
+	// search image data
+	files, err := ioutil.ReadDir(imgdir_path)
+
+	// without image
+	if err != nil || len(files) == 0 {
+		return out.String(), "", nil
+	}
+
+	// with image
+	img, err := ioutil.ReadFile(filepath.Join(imgdir_path, files[0].Name()))
+	if err != nil {
+		log.Println(err)
+		return out.String(), "", nil
+	}
+	b64img := base64.StdEncoding.EncodeToString(img)
+
+	return out.String(), b64img, nil
 }
