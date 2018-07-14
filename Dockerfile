@@ -52,7 +52,9 @@ RUN apt-get update -y && apt-get install -y ruby \
  ffmpeg\
  kakasi\
  dateutils\
- fonts-ipafont fonts-vlgothic
+ fonts-ipafont fonts-vlgothic\
+ inkscape gnuplot\
+ qrencode
 
 RUN gem install cureutils matsuya takarabako snacknomama rubipara
 
@@ -121,8 +123,8 @@ RUN wget -O julia.tar.gz https://julialang-s3.julialang.org/bin/linux/x64/0.6/ju
 RUN curl https://sh.rustup.rs -sSf | sh -s -- -y
 ENV PATH /root/.cargo/bin:$PATH
 
-RUN pip3 install sympy numpy scipy
-RUN pip install sympy numpy scipy
+RUN pip3 install sympy numpy scipy matplotlib
+RUN pip install sympy numpy scipy matplotlib
 
 RUN pip3 install xonsh
 
@@ -133,5 +135,8 @@ RUN git clone https://github.com/ryuichiueda/ShellGeiData
 RUN wget https://raintrees.net/attachments/download/472/EncodeZeroWidthSpace.sh && chmod a+x ./EncodeZeroWidthSpace.sh && wget https://raintrees.net/attachments/download/473/DecodeZeroWidthSpace.sh && chmod a+x ./DecodeZeroWidthSpace.sh
 
 ENV PATH /usr/games:$PATH
+
+RUN git clone https://github.com/ryuichiueda/ImageGeneratorForShBot
+ENV PATH /ImageGeneratorForShBot:$PATH
 
 CMD bash
