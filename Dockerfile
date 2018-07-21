@@ -54,7 +54,9 @@ RUN apt-get update -y && apt-get install -y ruby \
  dateutils\
  fonts-ipafont fonts-vlgothic\
  inkscape gnuplot\
- qrencode
+ qrencode\
+ fonts-nanum fonts-symbola fonts-noto-color-emoji\
+ sl
 
 RUN gem install cureutils matsuya takarabako snacknomama rubipara
 
@@ -132,11 +134,17 @@ ENV LANG ja_JP.UTF-8
 
 RUN git clone https://github.com/ryuichiueda/ShellGeiData
 
-RUN wget https://raintrees.net/attachments/download/472/EncodeZeroWidthSpace.sh && chmod a+x ./EncodeZeroWidthSpace.sh && wget https://raintrees.net/attachments/download/473/DecodeZeroWidthSpace.sh && chmod a+x ./DecodeZeroWidthSpace.sh
-
 ENV PATH /usr/games:$PATH
 
 RUN git clone https://github.com/ryuichiueda/ImageGeneratorForShBot
 ENV PATH /ImageGeneratorForShBot:$PATH
+
+RUN pip install pillow
+RUN pip3 install pillow
+
+RUN wget https://raintrees.net/attachments/download/486/zws && chmod a+x ./zws
+
+RUN wget https://pkg.osquery.io/deb/osquery_3.2.6_1.linux.amd64.deb -O osquery.deb && dpkg -i osquery.deb && rm osquery.deb
+
 
 CMD bash
