@@ -28,7 +28,7 @@ func ExtractShellgei(tweet anaconda.Tweet, self anaconda.User, api *anaconda.Twi
 	}
 	text = strings.TrimSpace(text)
 
-	if len(tweet.Entities.Urls) == 0 {
+	if tweet.QuotedStatusID == 0 {
 		return text
 	}
 	if tweet.QuotedStatusID == tweet.Id {
@@ -41,8 +41,8 @@ func ExtractShellgei(tweet anaconda.Tweet, self anaconda.User, api *anaconda.Twi
 		return text
 	}
 
-	text = ExtractShellgei(quoted, self, api, tags) + strings.Replace(text, tweet.Entities.Urls[0].Url, "", -1)
-	return text
+	quote_text := ExtractShellgei(quoted, self, api, tags)
+	return quote_text + text
 }
 
 func ParseTwitterKey(file string) (TwitterKeys, error) {
