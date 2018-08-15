@@ -25,4 +25,4 @@ jobs:
       - run: dep ensure
       - run: go build
       - store_artifacts:
-        path: /go/src/github.com/theoldmoon0602/ShellGeiBot/ShellGeiBot
+          path: /go/src/github.com/theoldmoon0602/ShellGeiBot/ShellGeiBot
