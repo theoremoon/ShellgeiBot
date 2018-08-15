@@ -24,4 +24,5 @@ jobs:
       # specify any bash command here prefixed with `run: `
       - run: dep ensure
       - run: go build
-      - store_artifacts: /go/src/github.com/theoldmoon0602/ShellGeiBot/ShellGeiBot
+      - store_artifacts:
+        path: /go/src/github.com/theoldmoon0602/ShellGeiBot/ShellGeiBot
