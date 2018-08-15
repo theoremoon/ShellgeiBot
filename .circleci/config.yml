@@ -25,6 +25,6 @@ jobs:
       - checkout
 
       # specify any bash command here prefixed with `run: `
-      - run: dep
+      - run: dep ensure
       - run: go build
       - run: mv ShellGeiBot $CIRCLE_ARTIFACTS/
