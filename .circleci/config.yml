@@ -2,9 +2,6 @@
 #
 # Check https://circleci.com/docs/2.0/language-go/ for more details
 version: 2
-general:
-  artifacts:
-    - "ShellGeiBot"
 jobs:
   build:
     docker:
@@ -27,4 +24,5 @@ jobs:
       # specify any bash command here prefixed with `run: `
       - run: dep ensure
       - run: go build
-      - run: mv ShellGeiBot $CIRCLE_ARTIFACTS/
+      - store_artifacts:
+        - /go/src/github.com/theoldmoon0602/ShellGeiBot/ShellGeiBot
