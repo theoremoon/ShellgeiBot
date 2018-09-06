@@ -9,6 +9,7 @@ import (
 	"log"
 	"net/url"
 	"os"
+	"strings"
 )
 
 func ProcessTweet(tweet anaconda.Tweet, self anaconda.User, api *anaconda.TwitterApi, db *sql.DB, botConfig BotConfig) {
@@ -84,12 +85,18 @@ func main() {
 		log.Fatal(err)
 	}
 
-	stream := api.UserStream(v)
+	botConfig, err := ParseBotConfig(os.Args[2])
+	if err != nil {
+		log.Fatal(err)
+	}
+	v.Set("track", strings.Join(botConfig.Tags, ","))
+	stream := api.PublicStreamFilter(v)
+
 	for {
 		t := <-stream.C
 		switch tweet := t.(type) {
 		case anaconda.Tweet:
-			botConfig, err := ParseBotConfig(os.Args[2])
+			botConfig, err = ParseBotConfig(os.Args[2])
 			if err != nil {
 				_, _ = api.PostTweet("@theoldmoon0602 Internal error", v)
 				log.Fatal(err)
