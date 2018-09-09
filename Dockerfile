@@ -2,6 +2,7 @@ FROM ubuntu:18.04
 
 ENV DEBIAN_FRONTEND noninteractive
 RUN apt-get update -y && apt-get install -y ruby \
+ ash yash\
  jq\
  vim\
  python3-dev\
@@ -56,7 +57,9 @@ RUN apt-get update -y && apt-get install -y ruby \
  inkscape gnuplot\
  qrencode\
  fonts-nanum fonts-symbola fonts-noto-color-emoji\
- sl
+ sl\
+ chromium-browser chromium-chromedriver nginx\
+ screenfetch
 
 RUN gem install cureutils matsuya takarabako snacknomama rubipara
 
@@ -146,5 +149,9 @@ RUN wget https://raintrees.net/attachments/download/486/zws && chmod a+x ./zws
 
 RUN wget https://pkg.osquery.io/deb/osquery_3.2.6_1.linux.amd64.deb -O osquery.deb && dpkg -i osquery.deb && rm osquery.deb
 
+RUN /etc/init.d/nginx start
+
+RUN apt-get update -y && apt-get install firefox -y
+RUN apt-get update -y && apt-get install lua5.3 php7.2 php7.2-cli php7.2-common -y
 
 CMD bash
