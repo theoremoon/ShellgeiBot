@@ -81,18 +81,18 @@ func (e *StdError) Error() string {
 	return e.Msg
 }
 
-func RunCmd(cmdstr string, botConfig BotConfig) (string, string, error) {
+func RunCmd(cmdstr string, botConfig BotConfig) (string, []string, error) {
 	// create shellgei script file
 	name, err := RandStr(16)
 	if err != nil {
-		return "", "", err
+		return "", []string{}, err
 	}
 	dirname := name + "__images"
 
 	path := filepath.Join(botConfig.Workdir, name)
 	file, err := os.Create(path)
 	if err != nil {
-		return "", "", fmt.Errorf("error: %s, directory permission denied?", err)
+		return "", []string{}, fmt.Errorf("error: %s, directory permission denied?", err)
 	}
 	defer func() { _ = file.Close() }()
 	defer func() { _ = os.RemoveAll(path) }()
@@ -100,13 +100,13 @@ func RunCmd(cmdstr string, botConfig BotConfig) (string, string, error) {
 	imgdir_path := filepath.Join(botConfig.Workdir, dirname)
 	err = os.MkdirAll(imgdir_path, 0777)
 	if err != nil {
-		return "", "", fmt.Errorf("error: %s, could not create directory", err)
+		return "", []string{}, fmt.Errorf("error: %s, could not create directory", err)
 	}
 	defer func() { _ = os.RemoveAll(imgdir_path) }()
 
 	_, err = file.WriteString(cmdstr)
 	if err != nil {
-		return "", "", fmt.Errorf("errors: %s, write failed", err)
+		return "", []string{}, fmt.Errorf("errors: %s, write failed", err)
 	}
 
 	// execute shellgei in the docker
@@ -138,7 +138,7 @@ func RunCmd(cmdstr string, botConfig BotConfig) (string, string, error) {
 		// do nothing
 	case err = <-errChan:
 		if err != nil {
-			return "", "", &StdError{fmt.Sprintf("err: %s -- execution error? %s ", err.Error(), stderr.String())}
+			return "", []string{}, &StdError{fmt.Sprintf("err: %s -- execution error? %s ", err.Error(), stderr.String())}
 		}
 	}
 
@@ -147,16 +147,25 @@ func RunCmd(cmdstr string, botConfig BotConfig) (string, string, error) {
 
 	// without image
 	if err != nil || len(files) == 0 {
-		return out.String(), "", nil
+		return out.String(), []string{}, nil
 	}
 
 	// with image
-	img, err := ioutil.ReadFile(filepath.Join(imgdir_path, files[0].Name()))
-	if err != nil {
-		log.Println(err)
-		return out.String(), "", nil
-	}
-	b64img := base64.StdEncoding.EncodeToString(img)
+	b64imgs := make([]string, 4, 4)
 
-	return out.String(), b64img, nil
+	for i := 0; i < 4; i++ {
+		if len(files) <= i {
+			break
+		}
+
+		img, err := ioutil.ReadFile(filepath.Join(imgdir_path, files[i].Name()))
+		if err != nil {
+			log.Println(err)
+			return out.String(), []string{}, nil
+		}
+		b64img := base64.StdEncoding.EncodeToString(img)
+		b64imgs = append(b64imgs, b64img)
+	}
+
+	return out.String(), b64imgs, nil
 }

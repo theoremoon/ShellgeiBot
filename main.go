@@ -38,8 +38,8 @@ func ProcessTweet(tweet anaconda.Tweet, self anaconda.User, api *anaconda.Twitte
 
 	InsertShellGei(db, tweet.User.Id, tweet.User.ScreenName, tweet.Id, text, t.Unix())
 
-	result, b64img, err := RunCmd(text, botConfig)
-	InsertResult(db, tweet.Id, result, b64img, err)
+	result, b64imgs, err := RunCmd(text, botConfig)
+	InsertResult(db, tweet.Id, result, b64imgs, err)
 
 	if err != nil {
 		if err.(*StdError) == nil {
@@ -48,11 +48,11 @@ func ProcessTweet(tweet anaconda.Tweet, self anaconda.User, api *anaconda.Twitte
 		return
 	}
 
-	if len(result) == 0 && len(b64img) == 0 {
+	if len(result) == 0 && len(b64imgs) == 0 {
 		return
 	}
 
-	err = TweetResult(api, tweet, MakeTweetable(result), b64img)
+	err = TweetResult(api, tweet, MakeTweetable(result), b64imgs)
 	if err != nil {
 		log.Println(err)
 	}

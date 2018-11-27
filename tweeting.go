@@ -94,21 +94,26 @@ func TweetUrl(tweet anaconda.Tweet) string {
 	return "https://twitter.com/" + tweet.User.ScreenName + "/status/" + tweet.IdStr
 }
 
-func TweetResult(api *anaconda.TwitterApi, tweet anaconda.Tweet, result string, b64img string) error {
+func TweetResult(api *anaconda.TwitterApi, tweet anaconda.Tweet, result string, b64imgs []string) error {
 	v := url.Values{}
+	media_ids := make([]string, 0, 4)
 
 	// with image
-	if len(b64img) > 0 {
+	for _, b64img := range b64imgs {
 		media, err := api.UploadMedia(b64img)
 		if err != nil {
 			log.Println(err)
 		} else {
-			v.Add("media_ids", media.MediaIDString)
-			result = result + " " + TweetUrl(tweet)
+			media_ids = append(media_ids, media.MediaIDString)
 		}
-	} else {
+	}
+	v.Add("media_ids", strings.Join(media_ids, ","))
+
+	if len(b64imgs) == 0 {
 		v.Set("tweet_mode", "extended")
 		v.Set("attachment_url", TweetUrl(tweet))
+	} else {
+		result = result + " " + TweetUrl(tweet)
 	}
 
 	/// post done message
