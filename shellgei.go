@@ -108,9 +108,10 @@ func RunCmd(cmdstr string, botConfig BotConfig) (string, []string, error) {
 	if err != nil {
 		return "", []string{}, fmt.Errorf("errors: %s, write failed", err)
 	}
+	file.Close()
 
 	// execute shellgei in the docker
-	cmd := exec.Command("docker", "run", "--net=none", "--rm", "--name", name, "-v", path+":/"+name, "-v", imgdir_path+":/images", botConfig.DockerImage, "bash", "/"+name)
+	cmd := exec.Command("docker", "run", "--net=none", "--rm", "--name", name, "-v", path+":/"+name, "-v", imgdir_path+":/images", botConfig.DockerImage, "bash", "-c", fmt.Sprintf("chmod +x /%s && sync && ./%s", name, name))
 	defer func() {
 		cmd := exec.Command("docker", "stop", name)
 		_ = cmd.Run()
@@ -137,9 +138,7 @@ func RunCmd(cmdstr string, botConfig BotConfig) (string, []string, error) {
 	case <-ctx.Done():
 		// do nothing
 	case err = <-errChan:
-		if err != nil {
-			return "", []string{}, &StdError{fmt.Sprintf("err: %s -- execution error? %s ", err.Error(), stderr.String())}
-		}
+		// do nothing
 	}
 
 	// search image data

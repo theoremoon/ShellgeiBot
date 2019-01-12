@@ -59,7 +59,11 @@ RUN apt-get update -y && apt-get install -y ruby \
  fonts-nanum fonts-symbola fonts-noto-color-emoji\
  sl\
  chromium-browser chromium-chromedriver nginx\
- screenfetch
+ screenfetch\
+ mono-mcs mono-runtime\
+ firefox\
+ lua5.3 php7.2 php7.2-cli php7.2-common\
+ boxes
 
 RUN gem install cureutils matsuya takarabako snacknomama rubipara
 
@@ -151,17 +155,21 @@ RUN wget https://pkg.osquery.io/deb/osquery_3.2.6_1.linux.amd64.deb -O osquery.d
 
 RUN /etc/init.d/nginx start
 
-RUN apt-get update -y && apt-get install firefox -y
-RUN apt-get update -y && apt-get install lua5.3 php7.2 php7.2-cli php7.2-common -y
-
 RUN wget https://github.com/o2sh/onefetch/releases/download/v1.0.0/onefetch_linux_x86-64.zip && unzip onefetch_linux_x86-64.zip && mv onefetch /usr/local/bin && rm onefetch_linux_x86-64.zip
 
 RUN wget -nv https://raw.githubusercontent.com/redpeacock78/sushiro/master/sushiro && install -m 0755 sushiro /usr/local/bin/sushiro && rm sushiro && sushiro -f
 RUN cargo install --git https://github.com/lotabout/rargs.git
 
-WORKDIR /ShellGeiData
-RUN git pull
-WORKDIR /
-
 RUN go get github.com/ericchiang/pup
+RUN wget https://raw.githubusercontent.com/xztaityozx/noc/master/noc/noc/Program.cs
+RUN mcs Program.cs && rm Program.cs && mv Program.exe noc
+
+RUN wget ftp://ftp.gnu.org/pub/gnu/bash/bash-5.0.tar.gz && tar xf bash-5.0.tar.gz && rm bash-5.0.tar.gz
+WORKDIR bash-5.0
+ENV CC cc
+RUN ./configure && make && make install
+WORKDIR /
+RUN rm -rf bash-5.0
+
+
 CMD bash

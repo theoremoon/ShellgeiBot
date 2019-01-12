@@ -29,7 +29,7 @@ func ProcessTweet(tweet anaconda.Tweet, self anaconda.User, api *anaconda.Twitte
 		return
 	}
 
-	text := ExtractShellgei(tweet, self, api, botConfig.Tags) + "\nexit 0"
+	text := ExtractShellgei(tweet, self, api, botConfig.Tags)
 	t, err := tweet.CreatedAtTime()
 	if err != nil {
 		log.Println(err)
