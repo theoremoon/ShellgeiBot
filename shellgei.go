@@ -111,7 +111,15 @@ func RunCmd(cmdstr string, botConfig BotConfig) (string, []string, error) {
 	file.Close()
 
 	// execute shellgei in the docker
-	cmd := exec.Command("docker", "run", "--net=none", "--rm", "--name", name, "-v", path+":/"+name, "-v", imgdir_path+":/images", botConfig.DockerImage, "bash", "-c", fmt.Sprintf("chmod +x /%s && sync && ./%s", name, name))
+	cmd := exec.Command("docker", "run", "--rm",
+		"--net=none",
+		"--pids-limit", "1024",
+		"-m", "512M",
+		"--cap-add", "sys_ptrace",
+		"--name", name,
+		"-v", path+":/"+name, "-v", imgdir_path+":/images", botConfig.DockerImage,
+		"bash", "-c", fmt.Sprintf("chmod +x /%s && sync && ./%s", name, name))
+
 	defer func() {
 		cmd := exec.Command("docker", "stop", name)
 		_ = cmd.Run()
