@@ -39,6 +39,7 @@ func ProcessTweet(tweet anaconda.Tweet, self anaconda.User, api *anaconda.Twitte
 	InsertShellGei(db, tweet.User.Id, tweet.User.ScreenName, tweet.Id, text, t.Unix())
 
 	result, b64imgs, err := RunCmd(text, botConfig)
+	result = MakeTweetable(result)
 	InsertResult(db, tweet.Id, result, b64imgs, err)
 
 	if err != nil {
@@ -52,7 +53,7 @@ func ProcessTweet(tweet anaconda.Tweet, self anaconda.User, api *anaconda.Twitte
 		return
 	}
 
-	err = TweetResult(api, tweet, MakeTweetable(result), b64imgs)
+	err = TweetResult(api, tweet, result, b64imgs)
 	if err != nil {
 		log.Println(err)
 	}
