@@ -114,7 +114,6 @@ func RunCmd(cmdstr string, botConfig BotConfig) (string, []string, error) {
 	cmd := exec.Command("docker", "run", "--rm",
 		"--net=none",
 		"--pids-limit", "1024",
-		"-m", "512M",
 		"--cap-add", "sys_ptrace",
 		"--name", name,
 		"-v", path+":/"+name, "-v", imgdir_path+":/images", botConfig.DockerImage,

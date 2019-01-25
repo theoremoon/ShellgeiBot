@@ -77,13 +77,12 @@ func MakeTweetable(text string) string {
 	i := 0
 	l := 0
 	for ; i < len(a); i++ {
-		if (unicode.Is(unicode.Latin, a[i]) || unicode.IsSpace(a[i])) && a[i] != '　' {
+		if a[i] <= unicode.MaxASCII || unicode.Is(unicode.Latin, a[i]) {
 			l++
 		} else {
 			l += 2
 		}
 		if l > 280 {
-			i--
 			break
 		}
 	}
