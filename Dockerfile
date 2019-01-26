@@ -8,6 +8,7 @@ ENV PATH /usr/games:$PATH
 # apt install
 ENV DEBIAN_FRONTEND noninteractive
 RUN apt-get update -y && apt-get install -y ruby \
+      timidity abcmidi\
       r-base\
       boxes\
       ash yash\
