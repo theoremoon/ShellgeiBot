@@ -8,6 +8,8 @@ ENV PATH /usr/games:$PATH
 # apt install
 ENV DEBIAN_FRONTEND noninteractive
 RUN apt-get update -y && apt-get install -y ruby \
+      screen tmux\
+      ttyrec\
       timidity abcmidi\
       r-base\
       boxes\
@@ -77,7 +79,7 @@ RUN apt-get update -y && apt-get install -y ruby \
 RUN gem install cureutils matsuya takarabako snacknomama rubipara
 
 # pip/pip3 install
-RUN pip3 install yq faker sympy numpy scipy matplotlib xonsh pillow
+RUN pip3 install yq faker sympy numpy scipy matplotlib xonsh pillow asciinema
 RUN pip install sympy numpy scipy matplotlib pillow
 
 
@@ -132,6 +134,7 @@ RUN mkdir /root/go
 RUN go get -u github.com/YuheiNakasaka/sayhuuzoku && ln -s /root/go/src/github.com/YuheiNakasaka/sayhuuzoku/db /
 RUN go get -u github.com/tomnomnom/gron
 RUN go get -u github.com/ericchiang/pup
+RUN go get -u github.com/sugyan/ttyrec2gif
 
 # whitespace
 RUN git clone https://github.com/hostilefork/whitespacers.git && cp /whitespacers/ruby/whitespace.rb /usr/local/bin/whitespace && chmod a+x /usr/local/bin/whitespace && rm -rf /whitespacers
