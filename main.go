@@ -3,9 +3,18 @@
 package main
 
 import (
+	"bytes"
 	"database/sql"
+	"encoding/base64"
+	"fmt"
 	"github.com/ChimeraCoder/anaconda"
+	"github.com/mattn/go-sixel"
 	_ "github.com/mattn/go-sqlite3"
+	"image"
+	_ "image/gif"
+	_ "image/jpeg"
+	_ "image/png"
+	"io/ioutil"
 	"log"
 	"net/url"
 	"os"
@@ -60,12 +69,9 @@ func ProcessTweet(tweet anaconda.Tweet, self anaconda.User, api *anaconda.Twitte
 	return
 }
 
-func main() {
-	if len(os.Args) < 3 {
-		log.Fatalf("<Usage>%s: TwitterConfig.json ShellgeiConfig.json", os.Args[0])
-	}
-
-	twitterKey, err := ParseTwitterKey(os.Args[1])
+/// ShellgeiBot main function
+func botMain(twitterConfigFile, botConfigFile string) {
+	twitterKey, err := ParseTwitterKey(twitterConfigFile)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -86,7 +92,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	botConfig, err := ParseBotConfig(os.Args[2])
+	botConfig, err := ParseBotConfig(botConfigFile)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -97,7 +103,7 @@ func main() {
 		t := <-stream.C
 		switch tweet := t.(type) {
 		case anaconda.Tweet:
-			botConfig, err = ParseBotConfig(os.Args[2])
+			botConfig, err = ParseBotConfig(botConfigFile)
 			if err != nil {
 				_, _ = api.PostTweet("@theoldmoon0602 Internal error", v)
 				log.Fatal(err)
@@ -107,6 +113,63 @@ func main() {
 				ProcessTweet(tweet, self, api, db, botConfig)
 			}()
 		}
+	}
+}
 
+func botTest(botConfigFile, scriptFile string) {
+	botConfig, err := ParseBotConfig(botConfigFile)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	script, err := ioutil.ReadFile(scriptFile)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	result, b64imgs, err := RunCmd(string(script), botConfig)
+	result = MakeTweetable(result)
+
+	if err != nil {
+		if err.(*StdError) == nil {
+			log.Fatal("internal Error")
+		}
+		return
+	}
+
+	if len(result) == 0 && len(b64imgs) == 0 {
+		fmt.Println("No result")
+		return
+	}
+
+	fmt.Println(result)
+	for _, b64img := range b64imgs {
+		imgBytes, err := base64.StdEncoding.DecodeString(b64img)
+		if err != nil {
+			log.Println(err)
+			continue
+		}
+
+		img, _, err := image.Decode(bytes.NewReader(imgBytes))
+		if err != nil {
+			log.Println(err)
+			continue
+		}
+
+		sixel.NewEncoder(os.Stdout).Encode(img)
+	}
+}
+
+func main() {
+	if len(os.Args) < 3 {
+		log.Fatalf("<Usage>%s: TwitterConfig.json ShellgeiConfig.json | -test ShellgeiConfig.json script", os.Args[0])
+	}
+
+	if os.Args[1] == "-test" {
+		// testing mode
+		botTest(os.Args[2], os.Args[3])
+	} else {
+		// normal mode
+		botMain(os.Args[1], os.Args[2])
 	}
 }
