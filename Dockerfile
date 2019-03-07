@@ -104,19 +104,18 @@ RUN rm /home-commands/README.md
 ENV PATH /home-commands:$PATH
 
 # j
-RUN wget http://www.jsoftware.com/download/j805/install/j805_linux64.tar.gz && tar xvzf j805_linux64.tar.gz
-RUN rm j805_linux64.tar.gz
-ENV PATH $PATH:/j64-805/bin
+RUN wget http://www.jsoftware.com/download/j807/install/j807_linux64_nonavx.tar.gz -O j.tar.gz && tar xvzf j.tar.gz && rm j.tar.gz
+ENV PATH $PATH:/j64-807/bin
 
 # trdsql (apply sql to csv)
-RUN wget https://github.com/noborus/trdsql/releases/download/v0.3.3/trdsql_linux_amd64.zip && unzip trdsql_linux_amd64.zip
+RUN wget https://github.com/noborus/trdsql/releases/download/v0.5.0/trdsql_linux_amd64.zip && unzip trdsql_linux_amd64.zip
 RUN rm trdsql_linux_amd64.zip
 ENV PATH $PATH:/trdsql_linux_amd64
 
-# jdk9
-RUN wget http://download.java.net/java/GA/jdk9/9.0.1/binaries/openjdk-9.0.1_linux-x64_bin.tar.gz -O openjdk9.tar.gz && tar xzf openjdk9.tar.gz
-RUN rm openjdk9.tar.gz
-ENV PATH $PATH:/jdk-9.0.1/bin
+# openjdk11
+RUN wget https://download.java.net/java/GA/jdk11/9/GPL/openjdk-11.0.2_linux-x64_bin.tar.gz -O openjdk11.tar.gz && tar xzf openjdk11.tar.gz
+RUN rm openjdk11.tar.gz
+ENV PATH $PATH:/jdk-11.0.2/bin
 
 # super unko...
 RUN git clone https://github.com/greymd/super_unko.git
@@ -126,7 +125,7 @@ ENV PATH $PATH:/super_unko
 RUN wget https://gist.githubusercontent.com/KeenS/6194e6ef1a151c9ea82536d5850b8bc7/raw/85af9ec757308b8ca4effdf24221f642cb34703b/nameko.svg
 
 # go 1.9, sayhuuzoku, gron
-RUN wget https://dl.google.com/go/go1.9.4.linux-amd64.tar.gz && tar xzf go1.9.4.linux-amd64.tar.gz -C /usr/local && rm go1.9.4.linux-amd64.tar.gz
+RUN wget https://dl.google.com/go/go1.12.linux-amd64.tar.gz -O go.tar.gz && tar xzf go.tar.gz -C /usr/local && rm go.tar.gz
 ENV PATH $PATH:/usr/local/go/bin
 ENV GOPATH /root/go 
 ENV PATH $PATH:/root/go/bin
@@ -135,6 +134,7 @@ RUN go get -u github.com/YuheiNakasaka/sayhuuzoku && ln -s /root/go/src/github.c
 RUN go get -u github.com/tomnomnom/gron
 RUN go get -u github.com/ericchiang/pup
 RUN go get -u github.com/sugyan/ttyrec2gif
+RUN go get -u github.com/xztaityozx/owari
 
 # whitespace
 RUN git clone https://github.com/hostilefork/whitespacers.git && cp /whitespacers/ruby/whitespace.rb /usr/local/bin/whitespace && chmod a+x /usr/local/bin/whitespace && rm -rf /whitespacers
@@ -147,7 +147,7 @@ RUN make install
 WORKDIR /
 
 # julia
-RUN wget -O julia.tar.gz https://julialang-s3.julialang.org/bin/linux/x64/0.6/julia-0.6.2-linux-x86_64.tar.gz && tar xf julia.tar.gz && rm julia.tar.gz &&  ln -s $(realpath $(ls | grep -E "^julia") )/bin/julia /usr/local/bin/julia 
+RUN wget -O julia.tar.gz https://julialang-s3.julialang.org/bin/linux/x64/1.1/julia-1.1.0-linux-x86_64.tar.gz && tar xf julia.tar.gz && rm julia.tar.gz &&  ln -s $(realpath $(ls | grep -E "^julia") )/bin/julia /usr/local/bin/julia 
 
 # rust, rargs
 RUN curl https://sh.rustup.rs -sSf | sh -s -- -y
@@ -161,17 +161,13 @@ RUN git clone https://github.com/ryuichiueda/ShellGeiData
 RUN git clone https://github.com/ryuichiueda/ImageGeneratorForShBot
 ENV PATH /ImageGeneratorForShBot:$PATH
 
-# zero with spaces
-
-# osquery
-
 # nignx 
 RUN /etc/init.d/nginx start
 
 # zws, osquery, onefetch, sushiro, noc
 RUN wget https://raintrees.net/attachments/download/486/zws && chmod a+x ./zws
-RUN wget https://pkg.osquery.io/deb/osquery_3.2.6_1.linux.amd64.deb -O osquery.deb && dpkg -i osquery.deb && rm osquery.deb
-RUN wget https://github.com/o2sh/onefetch/releases/download/v1.0.0/onefetch_linux_x86-64.zip && unzip onefetch_linux_x86-64.zip && mv onefetch /usr/local/bin && rm onefetch_linux_x86-64.zip
+RUN wget https://pkg.osquery.io/deb/osquery_3.3.2_1.linux.amd64.deb -O osquery.deb && dpkg -i osquery.deb && rm osquery.deb
+RUN wget https://github.com/o2sh/onefetch/releases/download/v1.5.2/onefetch_linux_x86-64.zip && unzip onefetch_linux_x86-64.zip && mv onefetch /usr/local/bin && rm onefetch_linux_x86-64.zip
 RUN wget -nv https://raw.githubusercontent.com/redpeacock78/sushiro/master/sushiro && install -m 0755 sushiro /usr/local/bin/sushiro && rm sushiro && sushiro -f
 RUN wget https://raw.githubusercontent.com/xztaityozx/noc/master/noc/noc/Program.cs && mcs Program.cs && rm Program.cs && mv Program.exe noc
 
@@ -182,5 +178,8 @@ ENV CC cc
 RUN ./configure && make && make install
 WORKDIR /
 RUN rm -rf bash-5.0
+
+RUN curl -O https://www.unicode.org/Public/UCD/latest/ucd/NormalizationTest.txt
+RUN curl -O https://www.unicode.org/Public/UCD/latest/ucd/NamesList.txt
 
 CMD bash
