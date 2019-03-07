@@ -113,11 +113,12 @@ func RunCmd(cmdstr string, botConfig BotConfig) (string, []string, error) {
 	// execute shellgei in the docker
 	cmd := exec.Command("docker", "run", "--rm",
 		"--net=none",
+		"-m", "10M", "--oom-kill-disable",
 		"--pids-limit", "1024",
 		"--cap-add", "sys_ptrace",
 		"--name", name,
 		"-v", path+":/"+name, "-v", imgdir_path+":/images", botConfig.DockerImage,
-		"bash", "-c", fmt.Sprintf("chmod +x /%s && sync && ./%s", name, name))
+		"bash", "-c", fmt.Sprintf("chmod +x /%s && sync && ./%s | head -c 1K", name, name))
 
 	defer func() {
 		cmd := exec.Command("docker", "stop", name)
