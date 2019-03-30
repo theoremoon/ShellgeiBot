@@ -28,7 +28,6 @@ RUN apt-get update -y && apt-get install -y ruby \
       perl\
       toilet\
       figlet\
-      haskell-platform\
       libncurses5-dev\
       git\
       build-essential\
@@ -84,14 +83,9 @@ RUN gem install cureutils matsuya takarabako snacknomama rubipara marky_markov
 RUN pip3 install yq faker sympy numpy scipy matplotlib xonsh pillow asciinema
 RUN pip install sympy numpy scipy matplotlib pillow
 
-
 # install egzact && egison
-RUN cabal update && cabal install egison
-RUN git clone https://github.com/greymd/egzact.git
-WORKDIR egzact
-RUN make install
-WORKDIR /
-ENV PATH /root/.cabal/bin:/root/.egison/bin:$PATH
+RUN curl -OL --retry 3 https://git.io/egison-3.7.14.x86_64.deb && dpkg -i ./egison-3.7.14.x86_64.deb && rm ./egison-3.7.14.x86_64.deb
+RUN curl -OL --retry 3 https://git.io/egzact-1.3.1.deb && dpkg -i ./egzact-1.3.1.deb && rm ./egzact-1.3.1.deb
 
 # install node and faker-cli, chemi
 RUN npm cache clean && npm install n -g
