@@ -114,8 +114,7 @@ RUN rm openjdk11.tar.gz
 ENV PATH $PATH:/jdk-11.0.2/bin
 
 # super unko...
-RUN git clone https://github.com/greymd/super_unko.git
-ENV PATH $PATH:/super_unko
+RUN curl -OL --retry 3 https://git.io/superunko.deb && dpkg -i superunko.deb && rm superunko.deb
 
 # nameko.svg
 RUN wget https://gist.githubusercontent.com/KeenS/6194e6ef1a151c9ea82536d5850b8bc7/raw/85af9ec757308b8ca4effdf24221f642cb34703b/nameko.svg
@@ -179,10 +178,5 @@ RUN rm -rf bash-5.0
 
 RUN curl -O https://www.unicode.org/Public/UCD/latest/ucd/NormalizationTest.txt
 RUN curl -O https://www.unicode.org/Public/UCD/latest/ucd/NamesList.txt
-
-#FIXME
-WORKDIR /super_unko
-RUN bash install.sh
-WORKDIR /
 
 CMD bash
