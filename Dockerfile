@@ -8,6 +8,8 @@ ENV PATH /usr/games:$PATH
 # apt install
 ENV DEBIAN_FRONTEND noninteractive
 RUN apt-get update -y && apt-get install -y ruby \
+      ruby-dev\
+      ccze\
       screen tmux\
       ttyrec\
       timidity abcmidi\
@@ -76,7 +78,7 @@ RUN apt-get update -y && apt-get install -y ruby \
       lua5.3 php7.2 php7.2-cli php7.2-common
 
 # gem install
-RUN gem install cureutils matsuya takarabako snacknomama rubipara
+RUN gem install cureutils matsuya takarabako snacknomama rubipara marky_markov
 
 # pip/pip3 install
 RUN pip3 install yq faker sympy numpy scipy matplotlib xonsh pillow asciinema
@@ -124,7 +126,7 @@ ENV PATH $PATH:/super_unko
 # nameko.svg
 RUN wget https://gist.githubusercontent.com/KeenS/6194e6ef1a151c9ea82536d5850b8bc7/raw/85af9ec757308b8ca4effdf24221f642cb34703b/nameko.svg
 
-# go 1.9, sayhuuzoku, gron
+# go 1.12, sayhuuzoku, gron
 RUN wget https://dl.google.com/go/go1.12.linux-amd64.tar.gz -O go.tar.gz && tar xzf go.tar.gz -C /usr/local && rm go.tar.gz
 ENV PATH $PATH:/usr/local/go/bin
 ENV GOPATH /root/go 
