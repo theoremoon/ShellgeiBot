@@ -186,4 +186,9 @@ RUN rm -rf bash-5.0
 RUN curl -O https://www.unicode.org/Public/UCD/latest/ucd/NormalizationTest.txt
 RUN curl -O https://www.unicode.org/Public/UCD/latest/ucd/NamesList.txt
 
+#FIXME
+WORKDIR /super_unko
+RUN bash install.sh
+WORKDIR /
+
 CMD bash
