@@ -28,7 +28,7 @@ RUN apt-get update -y && apt-get install -y ruby \
       perl\
       toilet\
       figlet\
-      libncurses5-dev\
+      haskell-platform\
       git\
       build-essential\
       mecab libmecab-dev mecab-ipadic mecab-ipadic-utf8 python-mecab\
