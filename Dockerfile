@@ -29,7 +29,6 @@ RUN apt-get update -y && apt-get install -y ruby \
       toilet\
       figlet\
       haskell-platform\
-      libncurses5-dev\
       git\
       build-essential\
       mecab libmecab-dev mecab-ipadic mecab-ipadic-utf8 python-mecab\
@@ -84,14 +83,9 @@ RUN gem install cureutils matsuya takarabako snacknomama rubipara marky_markov
 RUN pip3 install yq faker sympy numpy scipy matplotlib xonsh pillow asciinema
 RUN pip install sympy numpy scipy matplotlib pillow
 
-
 # install egzact && egison
-RUN cabal update && cabal install egison
-RUN git clone https://github.com/greymd/egzact.git
-WORKDIR egzact
-RUN make install
-WORKDIR /
-ENV PATH /root/.cabal/bin:/root/.egison/bin:$PATH
+RUN curl -OL --retry 3 https://git.io/egison-3.7.14.x86_64.deb && dpkg -i ./egison-3.7.14.x86_64.deb && rm ./egison-3.7.14.x86_64.deb
+RUN curl -OL --retry 3 https://git.io/egzact-1.3.1.deb && dpkg -i ./egzact-1.3.1.deb && rm ./egzact-1.3.1.deb
 
 # install node and faker-cli, chemi
 RUN npm cache clean && npm install n -g
@@ -120,8 +114,7 @@ RUN rm openjdk11.tar.gz
 ENV PATH $PATH:/jdk-11.0.2/bin
 
 # super unko...
-RUN git clone https://github.com/greymd/super_unko.git
-ENV PATH $PATH:/super_unko
+RUN curl -OL --retry 3 https://git.io/superunko.deb && dpkg -i superunko.deb && rm superunko.deb
 
 # nameko.svg
 RUN wget https://gist.githubusercontent.com/KeenS/6194e6ef1a151c9ea82536d5850b8bc7/raw/85af9ec757308b8ca4effdf24221f642cb34703b/nameko.svg
@@ -185,10 +178,5 @@ RUN rm -rf bash-5.0
 
 RUN curl -O https://www.unicode.org/Public/UCD/latest/ucd/NormalizationTest.txt
 RUN curl -O https://www.unicode.org/Public/UCD/latest/ucd/NamesList.txt
-
-#FIXME
-WORKDIR /super_unko
-RUN bash install.sh
-WORKDIR /
 
 CMD bash
