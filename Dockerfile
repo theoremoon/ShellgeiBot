@@ -80,7 +80,7 @@ RUN apt-get update -y && apt-get install -y ruby \
 RUN gem install cureutils matsuya takarabako snacknomama rubipara marky_markov
 
 # pip/pip3 install
-RUN pip3 install yq faker sympy numpy scipy matplotlib xonsh pillow asciinema
+RUN pip3 install yq faker sympy numpy scipy matplotlib xonsh pillow asciinema "https://github.com/megagonlabs/ginza/releases/download/v1.0.1/ja_ginza_nopn-1.0.1.tgz"
 RUN pip install sympy numpy scipy matplotlib pillow
 
 # install egzact && egison
