@@ -179,7 +179,16 @@ RUN ./configure && make && make install
 WORKDIR /
 RUN rm -rf bash-5.0
 
+# awk5.0
+RUN curl -OL --retry 3 https://ftp.gnu.org/gnu/gawk/gawk-5.0.0.tar.gz && tar -xpzf gawk-5.0.0.tar.gz && rm gawk-5.0.0.tar.gz
+WORKDIR gawk-5.0.0
+RUN ./configure --program-suffix="-5.0.0" && make && make install
+WORKDIR /
+RUN rm -rf gawk-5.0.0
+
+
 RUN curl -O https://www.unicode.org/Public/UCD/latest/ucd/NormalizationTest.txt
 RUN curl -O https://www.unicode.org/Public/UCD/latest/ucd/NamesList.txt
+
 
 CMD bash
