@@ -186,6 +186,8 @@ RUN ./configure --program-suffix="-5.0.0" && make && make install
 WORKDIR /
 RUN rm -rf gawk-5.0.0
 
+# Support Japanese era name. Delete this line after new glibc (more than 2.29) is available
+RUN curl -L --retry 3 "https://sourceware.org/git/?p=glibc.git;a=blob_plain;f=localedata/locales/ja_JP" > /usr/share/i18n/locales/ja_JP && localedef -i ja_JP -f UTF-8 ja_JP
 
 RUN curl -O https://www.unicode.org/Public/UCD/latest/ucd/NormalizationTest.txt
 RUN curl -O https://www.unicode.org/Public/UCD/latest/ucd/NamesList.txt
