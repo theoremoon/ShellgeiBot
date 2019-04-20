@@ -1,4 +1,4 @@
-FROM ubuntu:18.04
+FROM ubuntu:19.04
 
 # set lang, locale
 ENV LANG ja_JP.UTF-8
@@ -32,7 +32,7 @@ RUN apt-get update -y && apt-get install -y ruby \
       git\
       build-essential\
       mecab libmecab-dev mecab-ipadic mecab-ipadic-utf8 python-mecab\
-      wget curl nodejs npm\
+      wget curl npm\
       bsdgames fortunes cowsay fortunes-off cowsay-off\
       datamash\
       gawk\
@@ -48,7 +48,7 @@ RUN apt-get update -y && apt-get install -y ruby \
       whiptail\
       pandoc\
       postgresql-common\
-      postgresql-client-10\
+      postgresql-client-common\
       icu-devtools\
       tcsh\
       libskk-dev\
@@ -88,11 +88,7 @@ RUN curl -OL --retry 3 https://git.io/egison-3.7.14.x86_64.deb && dpkg -i ./egis
 RUN curl -OL --retry 3 https://git.io/egzact-1.3.1.deb && dpkg -i ./egzact-1.3.1.deb && rm ./egzact-1.3.1.deb
 
 # install node and faker-cli, chemi
-RUN npm cache clean && npm install n -g
-RUN n stable
-RUN ln -sf /usr/local/bin/node /usr/bin/node
-RUN npm install -g faker-cli
-RUN npm install -g chemi
+RUN npm install -g faker-cli chemi
 
 # home-commands (echo-sd)
 RUN git clone https://github.com/fumiyas/home-commands.git
