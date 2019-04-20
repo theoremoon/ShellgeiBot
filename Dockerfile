@@ -188,5 +188,6 @@ RUN curl -L --retry 3 "https://sourceware.org/git/?p=glibc.git;a=blob_plain;f=lo
 RUN curl -O https://www.unicode.org/Public/UCD/latest/ucd/NormalizationTest.txt
 RUN curl -O https://www.unicode.org/Public/UCD/latest/ucd/NamesList.txt
 
+RUN CGO_LDFLAGS="`mecab-config --libs`" CGO_CFLAGS="-I`mecab-config --inc-dir`" go get -u github.com/ryuichiueda/ke2daira
 
 CMD bash
