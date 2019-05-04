@@ -105,7 +105,7 @@ RUN rm trdsql_linux_amd64.zip
 ENV PATH $PATH:/trdsql_linux_amd64
 
 # openjdk11
-RUN wget https://download.java.net/java/GA/jdk11/9/GPL/openjdk-11.0.2_linux-x64_bin.tar.gz -O openjdk11.tar.gz && tar xzf openjdk11.tar.gz
+RUN wget https://download.oracle.com/java/GA/jdk11/9/GPL/openjdk-11.0.2_linux-x64_bin.tar.gz -O openjdk11.tar.gz && tar xzf openjdk11.tar.gz
 RUN rm openjdk11.tar.gz
 ENV PATH $PATH:/jdk-11.0.2/bin
 
