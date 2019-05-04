@@ -42,6 +42,8 @@ RUN apt-get update -y && apt-get install -y ruby \
       apache2-utils\
       fish\
       cowsay\
+      lolcat\
+      nyancat\
       imagemagick\
       moreutils\
       strace\
@@ -118,7 +120,7 @@ RUN wget https://gist.githubusercontent.com/KeenS/6194e6ef1a151c9ea82536d5850b8b
 # go 1.12, sayhuuzoku, gron
 RUN wget https://dl.google.com/go/go1.12.linux-amd64.tar.gz -O go.tar.gz && tar xzf go.tar.gz -C /usr/local && rm go.tar.gz
 ENV PATH $PATH:/usr/local/go/bin
-ENV GOPATH /root/go 
+ENV GOPATH /root/go
 ENV PATH $PATH:/root/go/bin
 RUN mkdir /root/go
 RUN go get -u github.com/YuheiNakasaka/sayhuuzoku && ln -s /root/go/src/github.com/YuheiNakasaka/sayhuuzoku/db /
@@ -141,7 +143,7 @@ RUN make install
 WORKDIR /
 
 # julia
-RUN wget -O julia.tar.gz https://julialang-s3.julialang.org/bin/linux/x64/1.1/julia-1.1.0-linux-x86_64.tar.gz && tar xf julia.tar.gz && rm julia.tar.gz &&  ln -s $(realpath $(ls | grep -E "^julia") )/bin/julia /usr/local/bin/julia 
+RUN wget -O julia.tar.gz https://julialang-s3.julialang.org/bin/linux/x64/1.1/julia-1.1.0-linux-x86_64.tar.gz && tar xf julia.tar.gz && rm julia.tar.gz &&  ln -s $(realpath $(ls | grep -E "^julia") )/bin/julia /usr/local/bin/julia
 
 # rust, rargs
 RUN curl https://sh.rustup.rs -sSf | sh -s -- -y
@@ -155,15 +157,16 @@ RUN git clone https://github.com/ryuichiueda/ShellGeiData
 RUN git clone https://github.com/ryuichiueda/ImageGeneratorForShBot
 ENV PATH /ImageGeneratorForShBot:$PATH
 
-# nignx 
+# nignx
 RUN /etc/init.d/nginx start
 
-# zws, osquery, onefetch, sushiro, noc
+# zws, osquery, onefetch, sushiro, noc, bat
 RUN wget https://raintrees.net/attachments/download/486/zws && chmod a+x ./zws
 RUN wget https://pkg.osquery.io/deb/osquery_3.3.2_1.linux.amd64.deb -O osquery.deb && dpkg -i osquery.deb && rm osquery.deb
 RUN wget https://github.com/o2sh/onefetch/releases/download/v1.5.2/onefetch_linux_x86-64.zip && unzip onefetch_linux_x86-64.zip && mv onefetch /usr/local/bin && rm onefetch_linux_x86-64.zip
 RUN wget -nv https://raw.githubusercontent.com/redpeacock78/sushiro/master/sushiro && install -m 0755 sushiro /usr/local/bin/sushiro && rm sushiro && sushiro -f
 RUN wget https://raw.githubusercontent.com/xztaityozx/noc/master/noc/noc/Program.cs && mcs Program.cs && rm Program.cs && mv Program.exe noc
+RUN wget https://github.com/sharkdp/bat/releases/download/v0.10.0/bat_0.10.0_amd64.deb && dpkg -i bat_0.10.0_amd64.deb && rm bat_0.10.0_amd64.deb
 
 # echo-meme
 RUN curl -OL --retry 3 https://git.io/echo-meme.deb && dpkg -i echo-meme.deb && rm echo-meme.deb
