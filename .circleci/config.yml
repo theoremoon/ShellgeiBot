@@ -6,8 +6,7 @@ jobs:
   build:
     docker:
       # specify the version
-      - image: circleci/golang:1.9
-      
+      - image: circleci/golang:1.12
       # Specify service dependencies here if necessary
       # CircleCI maintains a library of pre-built images
       # documented at https://circleci.com/docs/2.0/circleci-images/
@@ -26,3 +25,34 @@ jobs:
       - run: go build
       - store_artifacts:
           path: /go/src/github.com/theoldmoon0602/ShellGeiBot/ShellGeiBot
+  image-build:
+    docker:
+      - image: docker:stable
+      steps:
+        - checkout
+        - setup_remote_docker
+        - run:
+          command: docker build -t theoldmoon0602/shellgeibot:$(date +%Y%m%d)
+        - run:
+          command: docker login -u ${DOCKER_USER} -p ${DOCKER_PASS}
+        - run:
+          command: docker push theoldmoon0602/shellgeibot:$(date +%Y%m%d)
+workflows:
+  version: 2
+  commit-workflow:
+    jobs:
+      - build
+      - image-build
+
+  scheduled-workflow:
+    triggers:
+      - schedule:
+        cron: "0 6 * * *"
+        filters:
+          branches:
+            only:
+              - master
+    jobs:
+      - image-build
+
+
