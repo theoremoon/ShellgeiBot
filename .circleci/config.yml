@@ -28,15 +28,15 @@ jobs:
   image-build:
     docker:
       - image: docker:stable
-      steps:
-        - checkout
-        - setup_remote_docker
-        - run:
-          command: docker build -t theoldmoon0602/shellgeibot:$(date +%Y%m%d)
-        - run:
-          command: docker login -u ${DOCKER_USER} -p ${DOCKER_PASS}
-        - run:
-          command: docker push theoldmoon0602/shellgeibot:$(date +%Y%m%d)
+    steps:
+      - checkout
+      - setup_remote_docker
+      - run:
+        command: docker build -t theoldmoon0602/shellgeibot:$(date +%Y%m%d)
+      - run:
+        command: docker login -u ${DOCKER_USER} -p ${DOCKER_PASS}
+      - run:
+        command: docker push theoldmoon0602/shellgeibot:$(date +%Y%m%d)
 workflows:
   version: 2
   commit-workflow:
