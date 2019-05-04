@@ -166,7 +166,7 @@ RUN wget https://pkg.osquery.io/deb/osquery_3.3.2_1.linux.amd64.deb -O osquery.d
 RUN wget https://github.com/o2sh/onefetch/releases/download/v1.5.2/onefetch_linux_x86-64.zip && unzip onefetch_linux_x86-64.zip && mv onefetch /usr/local/bin && rm onefetch_linux_x86-64.zip
 RUN wget -nv https://raw.githubusercontent.com/redpeacock78/sushiro/master/sushiro && install -m 0755 sushiro /usr/local/bin/sushiro && rm sushiro && sushiro -f
 RUN wget https://raw.githubusercontent.com/xztaityozx/noc/master/noc/noc/Program.cs && mcs Program.cs && rm Program.cs && mv Program.exe noc
-RUN wget https://github.com/sharkdp/bat/releases/download/v0.10.0/bat_0.10.0_amd64.deb && sudo dpkg -i bat_0.10.0_amd64.deb && rm bat_0.10.0_amd64.deb
+RUN wget https://github.com/sharkdp/bat/releases/download/v0.10.0/bat_0.10.0_amd64.deb && dpkg -i bat_0.10.0_amd64.deb && rm bat_0.10.0_amd64.deb
 
 # echo-meme
 RUN curl -OL --retry 3 https://git.io/echo-meme.deb && dpkg -i echo-meme.deb && rm echo-meme.deb
