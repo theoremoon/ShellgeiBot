@@ -47,11 +47,11 @@ workflows:
   scheduled-workflow:
     triggers:
       - schedule:
-        cron: "0 6 * * *"
-        filters:
-          branches:
-            only:
-              - master
+          cron: "0 6 * * *"
+          filters:
+            branches:
+              only:
+                - master
     jobs:
       - image-build
 
