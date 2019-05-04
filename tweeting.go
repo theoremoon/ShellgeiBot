@@ -33,6 +33,11 @@ func ExtractShellgei(tweet anaconda.Tweet, self anaconda.User, api *anaconda.Twi
 	}
 
 	text := tweet.FullText
+
+    // expand url
+    for _, url := range tweet.Entities.Urls {
+        text = strings.Replace(text, url.Url, url.Expanded_url[len("http://"):], -1)
+    }
 	text = html.UnescapeString(text)
 	text = RemoveMentionSymbol(self, text)
 
