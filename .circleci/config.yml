@@ -32,7 +32,7 @@ jobs:
       - checkout
       - setup_remote_docker
       - run:
-          command: "sh -c 'docker build -t theoldmoon0602/shellgeibot:`date +%Y%m%d`'"
+          command: "sh -c 'docker build . -t theoldmoon0602/shellgeibot:`date +%Y%m%d`'"
       - run:
           command: docker login -u ${DOCKER_USER} -p ${DOCKER_PASS}
       - run:
