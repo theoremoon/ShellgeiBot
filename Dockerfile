@@ -1,4 +1,78 @@
-FROM ubuntu:19.04
+## Go
+FROM golang:1.12-stretch as go-builder
+RUN apt update -qq
+RUN apt install -y -qq libmecab-dev
+RUN go get -u github.com/YuheiNakasaka/sayhuuzoku
+RUN go get -u github.com/tomnomnom/gron
+RUN go get -u github.com/ericchiang/pup
+RUN go get -u github.com/sugyan/ttyrec2gif
+RUN go get -u github.com/xztaityozx/owari
+RUN go get -u github.com/jiro4989/align
+RUN go get -u github.com/jiro4989/taishoku
+RUN go get -u github.com/jiro4989/textimg
+RUN CGO_LDFLAGS="`mecab-config --libs`" CGO_CFLAGS="-I`mecab-config --inc-dir`" go get -u github.com/ryuichiueda/ke2daira
+
+## Ruby
+FROM ubuntu:19.04 as ruby-builder
+RUN apt update -qq
+RUN apt install -y -qq curl
+RUN apt install -y -qq build-essential
+RUN apt install -y -qq ruby ruby-dev
+RUN gem install --quiet --no-ri --no-rdoc cureutils matsuya takarabako snacknomama rubipara marky_markov
+RUN curl -sfSL --retry 3 https://raw.githubusercontent.com/hostilefork/whitespacers/master/ruby/whitespace.rb -o /usr/local/bin/whitespace
+RUN chmod +x /usr/local/bin/whitespace
+
+## Python
+FROM ubuntu:19.04 as python-builder
+RUN apt update -qq
+RUN apt install -y -qq python-dev python-pip python-mecab python3-dev python3-pip
+RUN pip install --quiet sympy numpy scipy matplotlib pillow
+RUN pip3 install --quiet yq faker sympy numpy scipy matplotlib xonsh pillow asciinema
+RUN pip3 install --quiet "https://github.com/megagonlabs/ginza/releases/download/v1.0.1/ja_ginza_nopn-1.0.1.tgz"
+
+# Node.js
+FROM ubuntu:19.04 as nodejs-builder
+RUN apt update -qq
+RUN apt install -y -qq nodejs
+RUN apt install -y -qq npm
+RUN npm install -g --silent faker-cli chemi
+
+# .NET
+FROM ubuntu:19.04 as dotnet-builder
+RUN apt update -qq
+RUN apt install -y -qq curl
+RUN apt install -y -qq git
+
+# install dotnet-core
+# 2019.05.05 時点で dotnet core がまだ ubuntu 19.04 に対応していないようなので、引き続き mono 利用; https://github.com/dotnet/core/issues/2657
+# RUN curl -sfSLO https://packages.microsoft.com/config/ubuntu/19.04/packages-microsoft-prod.deb
+# RUN dpkg -i packages-microsoft-prod.deb
+# RUN apt -y -qq install apt-transport-https
+# RUN apt update -qq
+# RUN apt install -y -qq dotnet-sdk-2.2
+
+# install mono-mcs
+ENV DEBIAN_FRONTEND noninteractive
+RUN apt install -y -qq mono-mcs
+RUN git clone --depth 1 https://github.com/xztaityozx/noc.git
+RUN mcs noc/noc/noc/Program.cs
+
+# gawk 5.0
+FROM ubuntu:19.04 as gawk-builder
+RUN apt update -qq
+RUN apt install -y -qq curl
+RUN apt install -y -qq build-essential
+
+RUN curl -sfSLO https://ftp.gnu.org/gnu/gawk/gawk-5.0.0.tar.gz
+RUN tar xf gawk-5.0.0.tar.gz
+WORKDIR gawk-5.0.0
+RUN ./configure --program-suffix="-5.0.0"
+RUN make
+RUN make install
+
+
+## Runtime
+FROM ubuntu:19.04 as runtime
 
 # set lang, locale
 ENV LANG ja_JP.UTF-8
@@ -7,8 +81,8 @@ ENV PATH /usr/games:$PATH
 
 # apt install
 ENV DEBIAN_FRONTEND noninteractive
-RUN apt-get update -y && apt-get install -y ruby \
-      ruby-dev\
+RUN apt update -qq \
+    && apt-get install -y ruby \
       ccze\
       screen tmux\
       ttyrec\
@@ -18,8 +92,6 @@ RUN apt-get update -y && apt-get install -y ruby \
       ash yash\
       jq\
       vim emacs\
-      python3-dev\
-      python-dev\
       nkf\
       rs\
       language-pack-ja\
@@ -30,8 +102,7 @@ RUN apt-get update -y && apt-get install -y ruby \
       figlet\
       haskell-platform\
       git\
-      build-essential\
-      mecab libmecab-dev mecab-ipadic mecab-ipadic-utf8 python-mecab\
+      mecab mecab-ipadic mecab-ipadic-utf8\
       wget curl npm\
       bsdgames fortunes cowsay fortunes-off cowsay-off\
       datamash\
@@ -76,122 +147,141 @@ RUN apt-get update -y && apt-get install -y ruby \
       screenfetch\
       mono-mcs mono-runtime\
       firefox\
-      lua5.3 php7.2 php7.2-cli php7.2-common
+      lua5.3 php7.2 php7.2-cli php7.2-common \
+    && apt clean \
+    && rm -rf /var/lib/apt/lists/
 
-# gem install
-RUN gem install cureutils matsuya takarabako snacknomama rubipara marky_markov
-
-# pip/pip3 install
-RUN pip3 install yq faker sympy numpy scipy matplotlib xonsh pillow asciinema "https://github.com/megagonlabs/ginza/releases/download/v1.0.1/ja_ginza_nopn-1.0.1.tgz"
-RUN pip install sympy numpy scipy matplotlib pillow
-
-# install egzact && egison
-RUN curl -OL --retry 3 https://git.io/egison-3.7.14.x86_64.deb && dpkg -i ./egison-3.7.14.x86_64.deb && rm ./egison-3.7.14.x86_64.deb
-RUN curl -OL --retry 3 https://git.io/egzact-1.3.1.deb && dpkg -i ./egzact-1.3.1.deb && rm ./egzact-1.3.1.deb
-
-# install node and faker-cli, chemi
-RUN npm install -g faker-cli chemi
-
-# home-commands (echo-sd)
-RUN git clone https://github.com/fumiyas/home-commands.git
-RUN rm /home-commands/README.md
-ENV PATH /home-commands:$PATH
-
-# j
-RUN wget http://www.jsoftware.com/download/j807/install/j807_linux64_nonavx.tar.gz -O j.tar.gz && tar xvzf j.tar.gz && rm j.tar.gz
-ENV PATH $PATH:/j64-807/bin
-
-# trdsql (apply sql to csv)
-RUN wget https://github.com/noborus/trdsql/releases/download/v0.5.0/trdsql_linux_amd64.zip && unzip trdsql_linux_amd64.zip
-RUN rm trdsql_linux_amd64.zip
-ENV PATH $PATH:/trdsql_linux_amd64
-
-# openjdk11
-RUN wget https://download.oracle.com/java/GA/jdk11/9/GPL/openjdk-11.0.2_linux-x64_bin.tar.gz -O openjdk11.tar.gz && tar xzf openjdk11.tar.gz
-RUN rm openjdk11.tar.gz
+# OpenJDK
+RUN curl -sfSL --retry 3 https://download.oracle.com/java/GA/jdk11/9/GPL/openjdk-11.0.2_linux-x64_bin.tar.gz -o openjdk11.tar.gz \
+    && tar xzf openjdk11.tar.gz \
+    && rm openjdk11.tar.gz
 ENV PATH $PATH:/jdk-11.0.2/bin
 
-# super unko...
-RUN curl -OL --retry 3 https://git.io/superunko.deb && dpkg -i superunko.deb && rm superunko.deb
+# Julia
+RUN curl -sfSL --retry 3 https://julialang-s3.julialang.org/bin/linux/x64/1.1/julia-1.1.0-linux-x86_64.tar.gz -o julia.tar.gz \
+    && tar xf julia.tar.gz \
+    && rm julia.tar.gz \
+    && ln -s $(realpath $(ls | grep -E "^julia") )/bin/julia /usr/local/bin/julia
 
-# nameko.svg
-RUN wget https://gist.githubusercontent.com/KeenS/6194e6ef1a151c9ea82536d5850b8bc7/raw/85af9ec757308b8ca4effdf24221f642cb34703b/nameko.svg
-
-# go 1.12, sayhuuzoku, gron
-RUN wget https://dl.google.com/go/go1.12.linux-amd64.tar.gz -O go.tar.gz && tar xzf go.tar.gz -C /usr/local && rm go.tar.gz
-ENV PATH $PATH:/usr/local/go/bin
-ENV GOPATH /root/go
-ENV PATH $PATH:/root/go/bin
-RUN mkdir /root/go
-RUN go get -u github.com/YuheiNakasaka/sayhuuzoku && ln -s /root/go/src/github.com/YuheiNakasaka/sayhuuzoku/db /
-RUN go get -u github.com/tomnomnom/gron
-RUN go get -u github.com/ericchiang/pup
-RUN go get -u github.com/sugyan/ttyrec2gif
-RUN go get -u github.com/xztaityozx/owari
-RUN go get -u github.com/jiro4989/align
-RUN go get -u github.com/jiro4989/taishoku
-RUN go get -u github.com/jiro4989/textimg
-
-# whitespace
-RUN git clone https://github.com/hostilefork/whitespacers.git && cp /whitespacers/ruby/whitespace.rb /usr/local/bin/whitespace && chmod a+x /usr/local/bin/whitespace && rm -rf /whitespacers
-
-
-# tukubai
-RUN git clone https://github.com/usp-engineers-community/Open-usp-Tukubai
-WORKDIR /Open-usp-Tukubai
-RUN make install
-WORKDIR /
-
-# julia
-RUN wget -O julia.tar.gz https://julialang-s3.julialang.org/bin/linux/x64/1.1/julia-1.1.0-linux-x86_64.tar.gz && tar xf julia.tar.gz && rm julia.tar.gz &&  ln -s $(realpath $(ls | grep -E "^julia") )/bin/julia /usr/local/bin/julia
-
-# rust, rargs
-RUN curl https://sh.rustup.rs -sSf | sh -s -- -y
+# Rust
+RUN curl -sfSL https://sh.rustup.rs | sh -s -- -y
 ENV PATH /root/.cargo/bin:$PATH
 RUN cargo install --git https://github.com/lotabout/rargs.git
 
+# J
+RUN curl -sfSL --retry 3 http://www.jsoftware.com/download/j807/install/j807_linux64_nonavx.tar.gz -o j.tar.gz \
+    && tar xvzf j.tar.gz \
+    && rm j.tar.gz
+ENV PATH $PATH:/j64-807/bin
+
+# home-commands (echo-sd)
+WORKDIR /root
+RUN git clone --depth 1 https://github.com/fumiyas/home-commands.git \
+    && cd home-commands \
+    && git archive --format=tar --prefix=home-commands/ HEAD | (cd / && tar xf -) \
+    && rm -rf /root/home-commands
+ENV PATH /home-commands:$PATH
+WORKDIR /
+
+# trdsql (apply sql to csv)
+RUN curl -sfSLO --retry 3 https://github.com/noborus/trdsql/releases/download/v0.5.0/trdsql_linux_amd64.zip \
+    && unzip trdsql_linux_amd64.zip \
+    && rm trdsql_linux_amd64.zip
+ENV PATH $PATH:/trdsql_linux_amd64
+
+# super_unko
+RUN curl -sfSLO --retry 3 https://git.io/superunko.deb \
+    && dpkg -i superunko.deb \
+    && rm superunko.deb
+
+# nameko.svg
+RUN curl -sfSLO https://gist.githubusercontent.com/KeenS/6194e6ef1a151c9ea82536d5850b8bc7/raw/85af9ec757308b8ca4effdf24221f642cb34703b/nameko.svg
+
+# tukubai
+RUN git clone --depth 1 https://github.com/usp-engineers-community/Open-usp-Tukubai.git \
+    && (cd Open-usp-Tukubai && make install) \
+    && rm -rf Open-usp-Tukubai
+
 # shellgei data
-RUN git clone https://github.com/ryuichiueda/ShellGeiData
+RUN git clone --depth 1 https://github.com/ryuichiueda/ShellGeiData.git
 
 # imgout
-RUN git clone https://github.com/ryuichiueda/ImageGeneratorForShBot
+RUN git clone --depth 1 https://github.com/ryuichiueda/ImageGeneratorForShBot.git
 ENV PATH /ImageGeneratorForShBot:$PATH
 
-# nignx
-RUN /etc/init.d/nginx start
+# # nginx ... これ必要?
+# RUN /etc/init.d/nginx start
 
-# zws, osquery, onefetch, sushiro, noc, bat
-RUN wget https://raintrees.net/attachments/download/486/zws && chmod a+x ./zws
-RUN wget https://pkg.osquery.io/deb/osquery_3.3.2_1.linux.amd64.deb -O osquery.deb && dpkg -i osquery.deb && rm osquery.deb
-RUN wget https://github.com/o2sh/onefetch/releases/download/v1.5.2/onefetch_linux_x86-64.zip && unzip onefetch_linux_x86-64.zip && mv onefetch /usr/local/bin && rm onefetch_linux_x86-64.zip
-RUN wget -nv https://raw.githubusercontent.com/redpeacock78/sushiro/master/sushiro && install -m 0755 sushiro /usr/local/bin/sushiro && rm sushiro && sushiro -f
-RUN wget https://raw.githubusercontent.com/xztaityozx/noc/master/noc/noc/Program.cs && mcs Program.cs && rm Program.cs && mv Program.exe noc
-RUN wget https://github.com/sharkdp/bat/releases/download/v0.10.0/bat_0.10.0_amd64.deb && dpkg -i bat_0.10.0_amd64.deb && rm bat_0.10.0_amd64.deb
+# zws
+RUN curl -sfSLO https://raintrees.net/attachments/download/486/zws \
+    && chmod +x zws
+
+# osquery
+RUN curl -sfSL https://pkg.osquery.io/deb/osquery_3.3.2_1.linux.amd64.deb -o osquery.deb \
+    && dpkg -i osquery.deb \
+    && rm osquery.deb
+
+# onefetch
+RUN curl -sfSLO https://github.com/o2sh/onefetch/releases/download/v1.5.2/onefetch_linux_x86-64.zip \
+    && unzip onefetch_linux_x86-64.zip -d /usr/local/bin onefetch \
+    && rm onefetch_linux_x86-64.zip
+
+# sushiro
+RUN curl -sfSL https://raw.githubusercontent.com/redpeacock78/sushiro/master/sushiro -o /usr/local/bin/sushiro \
+    && chmod +x /usr/local/bin/sushiro
+
+# bat
+RUN curl -sfSLO https://github.com/sharkdp/bat/releases/download/v0.10.0/bat_0.10.0_amd64.deb \
+    && dpkg -i bat_0.10.0_amd64.deb \
+    && rm bat_0.10.0_amd64.deb
 
 # echo-meme
-RUN curl -OL --retry 3 https://git.io/echo-meme.deb && dpkg -i echo-meme.deb && rm echo-meme.deb
+RUN curl -sfSLO --retry 3 https://git.io/echo-meme.deb \
+    && dpkg -i echo-meme.deb \
+    && rm echo-meme.deb
 
-# bash5.0
-RUN wget ftp://ftp.gnu.org/pub/gnu/bash/bash-5.0.tar.gz && tar xf bash-5.0.tar.gz && rm bash-5.0.tar.gz
-WORKDIR bash-5.0
-ENV CC cc
-RUN ./configure && make && make install
-WORKDIR /
-RUN rm -rf bash-5.0
+# unicode data
+RUN curl -sfSLO https://www.unicode.org/Public/UCD/latest/ucd/NormalizationTest.txt
+RUN curl -sfSLO https://www.unicode.org/Public/UCD/latest/ucd/NamesList.txt
 
-# awk5.0
-RUN curl -OL --retry 3 https://ftp.gnu.org/gnu/gawk/gawk-5.0.0.tar.gz && tar -xpzf gawk-5.0.0.tar.gz && rm gawk-5.0.0.tar.gz
-WORKDIR gawk-5.0.0
-RUN ./configure --program-suffix="-5.0.0" && make && make install
-WORKDIR /
-RUN rm -rf gawk-5.0.0
+# Go
+RUN curl -sfSL --retry 3 https://dl.google.com/go/go1.12.linux-amd64.tar.gz -o go.tar.gz \
+    && tar xzf go.tar.gz -C /usr/local \
+    && rm go.tar.gz
+ENV GOPATH /root/go
+ENV PATH $PATH:/usr/local/go/bin:/root/go/bin
+COPY --from=go-builder /go/bin /root/go/bin
+COPY --from=go-builder /go/src/github.com/YuheiNakasaka/sayhuuzoku/db/data.db /root/go/src/github.com/YuheiNakasaka/sayhuuzoku/db/data.db
+RUN ln -s /root/go/src/github.com/YuheiNakasaka/sayhuuzoku/db /
 
-# Support Japanese era name. Delete this line after new glibc (more than 2.29) is available
-RUN curl -L --retry 3 "https://sourceware.org/git/?p=glibc.git;a=blob_plain;f=localedata/locales/ja_JP" > /usr/share/i18n/locales/ja_JP && localedef -i ja_JP -f UTF-8 ja_JP
+# Ruby
+COPY --from=ruby-builder /usr/local/bin /usr/local/bin
+COPY --from=ruby-builder /var/lib/gems /var/lib/gems
 
-RUN curl -O https://www.unicode.org/Public/UCD/latest/ucd/NormalizationTest.txt
-RUN curl -O https://www.unicode.org/Public/UCD/latest/ucd/NamesList.txt
+# Python
+COPY --from=python-builder /usr/lib/python2.7/dist-packages /usr/lib/python2.7/dist-packages
+COPY --from=python-builder /usr/local/bin /usr/local/bin
+COPY --from=python-builder /usr/local/lib/python2.7 /usr/local/lib/python2.7
+COPY --from=python-builder /usr/local/lib/python3.7 /usr/local/lib/python3.7
 
-RUN CGO_LDFLAGS="`mecab-config --libs`" CGO_CFLAGS="-I`mecab-config --inc-dir`" go get -u github.com/ryuichiueda/ke2daira
+# egzact
+RUN curl -sfSLO --retry 3 https://git.io/egison-3.7.14.x86_64.deb \
+    && dpkg -i ./egison-3.7.14.x86_64.deb \
+    && rm ./egison-3.7.14.x86_64.deb
 
-CMD bash
+# egison
+RUN curl -sfSLO --retry 3 https://git.io/egzact-1.3.1.deb \
+    && dpkg -i ./egzact-1.3.1.deb \
+    && rm ./egzact-1.3.1.deb
+
+# Node.js
+COPY --from=nodejs-builder /usr/local/bin /usr/local/bin
+COPY --from=nodejs-builder /usr/local/lib/node_modules /usr/local/lib/node_modules
+
+# .NET
+COPY --from=dotnet-builder /noc/noc/noc/Program.exe /noc
+
+# gawk 5.0
+COPY --from=gawk-builder /usr/local /usr/local
+
+CMD /bin/bash
