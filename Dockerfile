@@ -128,6 +128,7 @@ RUN go get -u github.com/sugyan/ttyrec2gif
 RUN go get -u github.com/xztaityozx/owari
 RUN go get -u github.com/jiro4989/align
 RUN go get -u github.com/jiro4989/taishoku
+RUN go get -u github.com/jiro4989/textimg
 
 # whitespace
 RUN git clone https://github.com/hostilefork/whitespacers.git && cp /whitespacers/ruby/whitespace.rb /usr/local/bin/whitespace && chmod a+x /usr/local/bin/whitespace && rm -rf /whitespacers
