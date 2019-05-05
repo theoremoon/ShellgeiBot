@@ -38,6 +38,8 @@ jobs:
       - run:
           command: "sh -c 'docker push theoldmoon0602/shellgeibot:`date +%Y%m%d`'"
       - run:
+          command: "sh -c 'docker tag theoldmoon0602/shellgeibot:`date +%Y%m%d` theoldmoon0602/shellgeibot:latest'"
+      - run:
           command: docker push theoldmoon0602/shellgeibot:latest
 workflows:
   version: 2
