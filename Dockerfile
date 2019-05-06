@@ -148,14 +148,9 @@ RUN apt update -qq \
       mono-mcs mono-runtime\
       firefox\
       lua5.3 php7.2 php7.2-cli php7.2-common \
+      libedit-dev \
     && apt clean \
     && rm -rf /var/lib/apt/lists/
-
-# OpenJDK
-RUN curl -sfSL --retry 3 https://download.oracle.com/java/GA/jdk11/9/GPL/openjdk-11.0.2_linux-x64_bin.tar.gz -o openjdk11.tar.gz \
-    && tar xzf openjdk11.tar.gz \
-    && rm openjdk11.tar.gz
-ENV PATH $PATH:/jdk-11.0.2/bin
 
 # Julia
 RUN curl -sfSL --retry 3 https://julialang-s3.julialang.org/bin/linux/x64/1.1/julia-1.1.0-linux-x86_64.tar.gz -o julia.tar.gz \
@@ -173,6 +168,13 @@ RUN curl -sfSL --retry 3 http://www.jsoftware.com/download/j807/install/j807_lin
     && tar xvzf j.tar.gz \
     && rm j.tar.gz
 ENV PATH $PATH:/j64-807/bin
+
+# jconsole コマンドが JDK と J で重複するため、J の PATH を優先
+# OpenJDK
+RUN curl -sfSL --retry 3 https://download.oracle.com/java/GA/jdk11/9/GPL/openjdk-11.0.2_linux-x64_bin.tar.gz -o openjdk11.tar.gz \
+    && tar xzf openjdk11.tar.gz \
+    && rm openjdk11.tar.gz
+ENV PATH $PATH:/jdk-11.0.2/bin
 
 # home-commands (echo-sd)
 WORKDIR /root
@@ -252,6 +254,7 @@ ENV GOPATH /root/go
 ENV PATH $PATH:/usr/local/go/bin:/root/go/bin
 COPY --from=go-builder /go/bin /root/go/bin
 COPY --from=go-builder /go/src/github.com/YuheiNakasaka/sayhuuzoku/db/data.db /root/go/src/github.com/YuheiNakasaka/sayhuuzoku/db/data.db
+COPY --from=go-builder /go/src/github.com/YuheiNakasaka/sayhuuzoku/scraping/ /root/go/src/github.com/YuheiNakasaka/sayhuuzoku/scraping/
 RUN ln -s /root/go/src/github.com/YuheiNakasaka/sayhuuzoku/db /
 
 # Ruby
