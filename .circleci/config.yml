@@ -55,7 +55,7 @@ jobs:
       - run:
           name: Push Docker image to Docker Hub
           command: |
-            # docker push ${DOCKER_IMAGE}:latest
+            docker push ${DOCKER_IMAGE}:latest
             DATE_TAG=$(date +%Y%m%d)
             docker tag ${DOCKER_IMAGE}:latest ${DOCKER_IMAGE}:${DATE_TAG}
             docker push ${DOCKER_IMAGE}:${DATE_TAG}
