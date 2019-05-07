@@ -2,6 +2,8 @@
 
 @test "Ruby" {
   run docker container run --rm ${DOCKER_IMAGE} bash -c "echo シェル芸 | ruby -nle 'puts \$_'"
+  echo "status: ${status}"
+  echo "output: ${output}"
   [ "$output" = "シェル芸" ]
 }
 
@@ -140,10 +142,10 @@
   [[ "$output" =~ "git version" ]]
 }
 
-@test "build-essential" {
-  run docker container run --rm ${DOCKER_IMAGE} gcc --version
-  [[ "${lines[0]}" =~ gcc ]]
-}
+# @test "build-essential" {
+#   run docker container run --rm ${DOCKER_IMAGE} gcc --version
+#   [[ "${lines[0]}" =~ gcc ]]
+# }
 
 @test "mecab" {
   run docker container run --rm ${DOCKER_IMAGE} bash -c "echo シェル芸 | mecab -Owakati"
@@ -658,6 +660,12 @@
 @test "rust" {
   run docker container run --rm ${DOCKER_IMAGE} rustc --help
   [ "${lines[0]}" = 'Usage: rustc [OPTIONS] INPUT' ]
+}
+
+@test "rargs" {
+  run docker container run --rm ${DOCKER_IMAGE} rargs --help
+  [[ "${lines[0]}" =~ "Rargs " ]]
+  [ "${lines[2]}" = 'Xargs with pattern matching' ]
 }
 
 @test "ShellGeiData" {

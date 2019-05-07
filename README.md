@@ -3,7 +3,7 @@
 ## Build Docker image
 
 ```sh
-$ ./build.bash
+$ ./build.bash shellgeibot:latest
 ```
 
 ## Test Docker image
@@ -27,5 +27,5 @@ $ brew install bats
 ### Run
 
 ```sh
-$ bats docker_image.bats
+$ DOCKER_IMAGE=shellgeibot:latest bats docker_image.bats
 ```
