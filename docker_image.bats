@@ -142,20 +142,20 @@
   [[ "$output" =~ "git version" ]]
 }
 
-# @test "build-essential" {
-#   run docker container run --rm ${DOCKER_IMAGE} gcc --version
-#   [[ "${lines[0]}" =~ gcc ]]
-# }
+@test "build-essential" {
+  run docker container run --rm ${DOCKER_IMAGE} gcc --version
+  [[ "${lines[0]}" =~ gcc ]]
+}
 
 @test "mecab" {
   run docker container run --rm ${DOCKER_IMAGE} bash -c "echo シェル芸 | mecab -Owakati"
   [ "$output" = "シェル 芸 " ]
 }
 
-@test "wget" {
-  run docker container run --rm ${DOCKER_IMAGE} bash -c "echo シェル芸 > index.txt && python3 -m http.server & sleep 0.5 && wget -q http://localhost:8000/index.txt -O -"
-  [ "$output" = "シェル芸" ]
-}
+# @test "wget" {
+#   run docker container run --rm ${DOCKER_IMAGE} bash -c "echo シェル芸 > index.txt && python3 -m http.server & sleep 0.5 && wget -q http://localhost:8000/index.txt -O -"
+#   [ "$output" = "シェル芸" ]
+# }
 
 @test "curl" {
   run docker container run --rm ${DOCKER_IMAGE} bash -c "echo シェル芸 > index.txt && python3 -m http.server & sleep 0.5 && curl -s http://localhost:8000/index.txt"
@@ -163,10 +163,10 @@
   [ "$output" = "シェル芸" ]
 }
 
-@test "npm" {
-  run docker container run --rm ${DOCKER_IMAGE} which npm
-  [ "$output" = "/usr/bin/npm" ]
-}
+# @test "npm" {
+#   run docker container run --rm ${DOCKER_IMAGE} which npm
+#   [ "$output" = "/usr/bin/npm" ]
+# }
 
 @test "bsdgames" {
   run docker container run --rm ${DOCKER_IMAGE} bash -c "echo '... .... . .-.. .-.. --. . ..  ...-.-' | morse -d"
