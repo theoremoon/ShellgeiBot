@@ -61,14 +61,6 @@ RUN apt install -y -qq curl git mono-mcs
 RUN git clone --depth 1 https://github.com/xztaityozx/noc.git
 RUN mcs noc/noc/noc/Program.cs
 
-## Rust
-FROM ubuntu:19.04 as rust-builder
-RUN apt update -qq
-RUN apt install -y -qq curl build-essential
-RUN curl -sfSL https://sh.rustup.rs | sh -s -- -y
-ENV PATH /root/.cargo/bin:$PATH
-RUN cargo install --git https://github.com/lotabout/rargs.git
-
 ## General
 FROM ubuntu:19.04 as general-builder
 RUN apt update -qq
@@ -165,9 +157,6 @@ RUN git clone --depth 1 https://github.com/ryuichiueda/ShellGeiData.git
 RUN git clone --depth 1 https://github.com/ryuichiueda/ImageGeneratorForShBot.git
 ENV PATH /ImageGeneratorForShBot:$PATH
 
-# # nginx ... これ必要?
-# RUN /etc/init.d/nginx start
-
 # zws
 RUN curl -sfSLO https://raintrees.net/attachments/download/486/zws \
     && chmod +x zws
@@ -204,68 +193,73 @@ RUN curl -sfSLO https://www.unicode.org/Public/UCD/latest/ucd/NamesList.txt
 RUN --mount=type=cache,target=/var/cache/apt \
     --mount=type=cache,target=/var/lib/apt \
     apt update -qq && apt install -y -qq \
-      ruby \
-      ccze \
-      screen tmux \
-      ttyrec \
-      timidity abcmidi \
-      r-base \
-      boxes \
-      ash yash \
-      jq \
-      vim emacs \
-      nkf \
-      rs \
-      language-pack-ja \
-      pwgen \
-      bc \
-      perl \
-      toilet \
-      figlet \
-      haskell-platform \
-      mecab mecab-ipadic mecab-ipadic-utf8 \
-      bsdgames fortunes cowsay fortunes-off cowsay-off \
-      datamash \
-      gawk \
-      libxml2-utils \
-      zsh \
-      num-utils \
-      apache2-utils \
-      fish \
-      lolcat \
-      nyancat \
-      imagemagick \
-      moreutils \
-      strace \
-      whiptail \
-      pandoc \
-      postgresql-common \
-      postgresql-client-common \
-      icu-devtools \
-      tcsh \
-      libskk-dev \
-      libkkc-utils \
-      morsegen \
-      dc \
-      telnet \
-      busybox \
-      parallel \
-      rename \
-      mt-st \
-      ffmpeg \
-      kakasi \
-      dateutils \
-      fonts-ipafont fonts-vlgothic \
-      inkscape gnuplot \
-      qrencode \
-      fonts-nanum fonts-symbola fonts-noto-color-emoji \
-      sl \
-      chromium-browser chromium-chromedriver nginx \
-      screenfetch \
-      mono-runtime \
-      firefox \
-      lua5.3 php7.2 php7.2-cli php7.2-common \
+      ruby\
+      ccze\
+      screen tmux\
+      ttyrec\
+      timidity abcmidi\
+      r-base\
+      boxes\
+      ash yash\
+      jq\
+      vim emacs\
+      nkf\
+      rs\
+      language-pack-ja\
+      pwgen\
+      bc\
+      perl\
+      toilet\
+      figlet\
+      haskell-platform\
+      mecab mecab-ipadic mecab-ipadic-utf8\
+      bsdgames fortunes cowsay fortunes-off cowsay-off\
+      datamash\
+      gawk\
+      libxml2-utils\
+      zsh\
+      num-utils\
+      apache2-utils\
+      fish\
+      lolcat\
+      nyancat\
+      imagemagick\
+      moreutils\
+      strace\
+      whiptail\
+      pandoc\
+      postgresql-common\
+      postgresql-client-common\
+      icu-devtools\
+      tcsh\
+      libskk-dev\
+      libkkc-utils\
+      morsegen\
+      dc\
+      telnet\
+      busybox\
+      parallel\
+      rename\
+      mt-st\
+      ffmpeg\
+      kakasi\
+      dateutils\
+      fonts-ipafont fonts-vlgothic\
+      inkscape gnuplot\
+      qrencode\
+      fonts-nanum fonts-symbola fonts-noto-color-emoji\
+      sl\
+      chromium-browser chromium-chromedriver nginx\
+      screenfetch\
+      mono-runtime\
+      firefox\
+      lua5.3 php7.2 php7.2-cli php7.2-common\
       nodejs
+
+## Rust
+RUN curl -sfSL https://sh.rustup.rs | sh -s -- -y
+ENV PATH /root/.cargo/bin:$PATH
+RUN cargo install --git https://github.com/lotabout/rargs.git
 
 # Go
 RUN curl -sfSL --retry 3 https://dl.google.com/go/go1.12.linux-amd64.tar.gz -o go.tar.gz \
@@ -274,11 +268,53 @@ RUN curl -sfSL --retry 3 https://dl.google.com/go/go1.12.linux-amd64.tar.gz -o g
 ENV GOPATH /root/go
 ENV PATH $PATH:/usr/local/go/bin:/root/go/bin
 COPY --from=go-builder /root/go/bin /root/go/bin
-RUN mkdir -p /root/go/src/github.com/YuheiNakasaka/sayhuuzoku/db/
-RUN curl -sfSL https://raw.githubusercontent.com/YuheiNakasaka/sayhuuzoku/master/db/data.db -o /root/go/src/github.com/YuheiNakasaka/sayhuuzoku/db/data.db
-RUN mkdir -p /root/go/src/github.com/YuheiNakasaka/sayhuuzoku/scraping/
-RUN curl -sfSL https://raw.githubusercontent.com/YuheiNakasaka/sayhuuzoku/master/scraping/shoplist.txt -o /root/go/src/github.com/YuheiNakasaka/sayhuuzoku/scraping/shoplist.txt
-RUN ln -s /root/go/src/github.com/YuheiNakasaka/sayhuuzoku/db /
+RUN mkdir -p /root/go/src/github.com/YuheiNakasaka/sayhuuzoku/db/ \
+    && curl -sfSL https://raw.githubusercontent.com/YuheiNakasaka/sayhuuzoku/master/db/data.db \
+      -o /root/go/src/github.com/YuheiNakasaka/sayhuuzoku/db/data.db \
+    && ln -s /root/go/src/github.com/YuheiNakasaka/sayhuuzoku/db / \
+    && mkdir -p /root/go/src/github.com/YuheiNakasaka/sayhuuzoku/scraping/ \
+    && curl -sfSL https://raw.githubusercontent.com/YuheiNakasaka/sayhuuzoku/master/scraping/shoplist.txt \
+      -o /root/go/src/github.com/YuheiNakasaka/sayhuuzoku/scraping/shoplist.txt \
+    && mkdir -p /usr/local/share/sayhuuzoku \
+    && curl -sfSL https://raw.githubusercontent.com/YuheiNakasaka/sayhuuzoku/master/README.md \
+      -o /usr/local/share/sayhuuzoku/README.md
+RUN mkdir -p /usr/local/share/gron \
+    && curl -sfSL https://raw.githubusercontent.com/tomnomnom/gron/master/LICENSE \
+      -o /usr/local/share/gron/LICENSE \
+    && curl -sfSL https://raw.githubusercontent.com/tomnomnom/gron/master/README.mkd \
+      -o /usr/local/share/gron/README.mkd
+RUN mkdir -p /usr/local/share/ttyrec2gif \
+    && curl -sfSL https://raw.githubusercontent.com/sugyan/ttyrec2gif/master/README.md \
+      -o /usr/local/share/ttyrec2gif/README.md \
+    && curl -sfSL https://raw.githubusercontent.com/sugyan/ttyrec2gif/master/LICENSE \
+      -o /usr/local/share/ttyrec2gif/LICENSE
+RUN mkdir -p /usr/local/share/owari \
+    && curl -sfSL https://raw.githubusercontent.com/xztaityozx/owari/master/README.md \
+      -o /usr/local/share/owari/README.md \
+    && curl -sfSL https://raw.githubusercontent.com/xztaityozx/owari/master/LICENSE \
+      -o /usr/local/share/owari/LICENSE
+RUN mkdir -p /usr/local/share/align \
+    && curl -sfSL https://raw.githubusercontent.com/jiro4989/align/master/README.adoc \
+      -o /usr/local/share/align/README.adoc \
+    && curl -sfSL https://raw.githubusercontent.com/jiro4989/align/master/LICENSE \
+      -o /usr/local/share/align/LICENSE
+RUN mkdir -p /usr/local/share/taishoku \
+    && curl -sfSL https://raw.githubusercontent.com/jiro4989/taishoku/master/README.adoc \
+      -o /usr/local/share/taishoku/README.adoc \
+    && curl -sfSL https://raw.githubusercontent.com/jiro4989/taishoku/master/LICENSE \
+      -o /usr/local/share/taishoku/LICENSE
+RUN mkdir -p /usr/local/share/textimg \
+    && curl -sfSL https://raw.githubusercontent.com/jiro4989/textimg/master/README.adoc \
+      -o /usr/local/share/textimg/README.adoc \
+    && curl -sfSL https://raw.githubusercontent.com/jiro4989/textimg/master/LICENSE \
+      -o /usr/local/share/textimg/LICENSE
+RUN mkdir -p /usr/local/share/ke2daira \
+    && curl -sfSL https://raw.githubusercontent.com/ryuichiueda/ke2daira/master/README.md \
+      -o /usr/local/share/ke2daira/README.md \
+    && curl -sfSL https://raw.githubusercontent.com/ryuichiueda/ke2daira/master/README.en.md \
+      -o /usr/local/share/ke2daira/README.en.md \
+    && curl -sfSL https://raw.githubusercontent.com/ryuichiueda/ke2daira/master/LICENSE \
+      -o /usr/local/share/ke2daira/LICENSE
 
 # Ruby
 COPY --from=ruby-builder /usr/local/bin /usr/local/bin
@@ -296,11 +332,8 @@ COPY --from=nodejs-builder /usr/local/lib/node_modules /usr/local/lib/node_modul
 
 # .NET
 COPY --from=dotnet-builder /noc/noc/noc/Program.exe /noc
-
-# Rust
-COPY --from=rust-builder /root/.cargo /root/.cargo
-RUN curl -sfSL https://sh.rustup.rs | sh -s -- -y
-ENV PATH /root/.cargo/bin:$PATH
+COPY --from=dotnet-builder /noc/LICENSE /usr/local/share/noc/LICENSE
+COPY --from=dotnet-builder /noc/README.md /usr/local/share/noc/README.md
 
 # gawk 5.0 / Open-usp-Tukubai
 COPY --from=general-builder /usr/local /usr/local
