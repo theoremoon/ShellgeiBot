@@ -228,8 +228,8 @@
 }
 
 @test "lolcat" {
-  run docker container run --rm ${DOCKER_IMAGE} which lolcat
-  [ "$output" = "/usr/games/lolcat" ]
+  run docker container run --rm ${DOCKER_IMAGE} lolcat --version
+  [[ "${lines[0]}" =~ "lolcat" ]]
 }
 
 @test "nyancat" {
@@ -243,8 +243,8 @@
 }
 
 @test "moreutils" {
-  run docker container run --rm ${DOCKER_IMAGE} which pee
-  [ "$output" = "/usr/bin/pee" ]
+  run docker container run --rm ${DOCKER_IMAGE} errno 1
+  [ "$output" = "EPERM 1 許可されていない操作です" ]
 }
 
 # strace は docker 上で実行する場合、--cap-add=SYS_PTRACE と --security-opt="seccomp=unconfined" が必要になるため、不要では
@@ -301,8 +301,9 @@
 }
 
 @test "telnet" {
-  run docker container run --rm ${DOCKER_IMAGE} which telnet
-  [ "$output" = "/usr/bin/telnet" ]
+  run docker container run --rm ${DOCKER_IMAGE} telnet -h
+  [ $status -eq 1 ]
+  [ "${lines[0]}" = "telnet: invalid option -- 'h'" ]
 }
 
 @test "busybox" {
@@ -643,8 +644,8 @@
 }
 
 @test "whitespace" {
-  run docker container run --rm ${DOCKER_IMAGE} which whitespace
-  [ "$output" = '/usr/local/bin/whitespace' ]
+  run docker container run --rm ${DOCKER_IMAGE} bash -c "echo -e '   \t \t  \t\t\n\t\n     \t\t \t   \n\t\n     \t\t  \t \t\n\t\n     \t\t \t\t  \n\t\n     \t\t \t\t  \n\t\n     \t   \t\t\t\n\t\n     \t\t  \t \t\n\t\n     \t\t \t  \t\n\t\n  \n\n' | whitespace"
+  [ "$output" = 'ShellGei' ]
 }
 
 @test "Open usp Tukubai" {
