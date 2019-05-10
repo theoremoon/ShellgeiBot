@@ -7,9 +7,8 @@ RUN apt install -y -qq curl git build-essential libmecab-dev
 RUN curl -sfSL --retry 3 https://dl.google.com/go/go1.12.linux-amd64.tar.gz -o go.tar.gz \
     && tar xzf go.tar.gz -C /usr/local \
     && rm go.tar.gz
+ENV PATH $PATH:/usr/local/go/bin
 ENV GOPATH /root/go
-ENV PATH $PATH:/usr/local/go/bin:/root/go/bin
-
 RUN --mount=type=cache,target=/root/go/src \
     --mount=type=cache,target=/root/.cache/go-build \
     go get -u \
@@ -20,11 +19,21 @@ RUN --mount=type=cache,target=/root/go/src \
       github.com/xztaityozx/owari \
       github.com/jiro4989/align \
       github.com/jiro4989/taishoku \
-      github.com/jiro4989/textimg
-RUN --mount=type=cache,target=/root/go/src \
-    --mount=type=cache,target=/root/.cache/go-build \
-    CGO_LDFLAGS="`mecab-config --libs`" CGO_CFLAGS="-I`mecab-config --inc-dir`" \
-    go get -u github.com/ryuichiueda/ke2daira
+      github.com/jiro4989/textimg \
+    && CGO_LDFLAGS="`mecab-config --libs`" CGO_CFLAGS="-I`mecab-config --inc-dir`" \
+      go get -u github.com/ryuichiueda/ke2daira \
+    && find /root/go/src -type f \
+      | grep -iE 'license|readme' \
+      | grep -v '.go$' \
+      | xargs -I@ echo "mkdir -p @; cp -f @ @" \
+      | sed -e 's!/[^/]*;!;!' -e 's!/root/go/src/!/tmp/go/src/!3' -e 's!/root/go/src/!/tmp/go/src/!' \
+      | sh \
+    && mkdir -p /tmp/go/src/github.com/YuheiNakasaka/sayhuuzoku/db \
+         && cp /root/go/src/github.com/YuheiNakasaka/sayhuuzoku/db/data.db \
+                /tmp/go/src/github.com/YuheiNakasaka/sayhuuzoku/db/data.db \
+    && mkdir -p /tmp/go/src/github.com/YuheiNakasaka/sayhuuzoku/scraping \
+         && cp /root/go/src/github.com/YuheiNakasaka/sayhuuzoku/scraping/shoplist.txt \
+                /tmp/go/src/github.com/YuheiNakasaka/sayhuuzoku/scraping/shoplist.txt
 
 ## Ruby
 FROM ubuntu:19.04 as ruby-builder
@@ -256,65 +265,19 @@ RUN --mount=type=cache,target=/var/cache/apt \
       lua5.3 php7.2 php7.2-cli php7.2-common\
       nodejs
 
-## Rust
+# Rust
 RUN curl -sfSL https://sh.rustup.rs | sh -s -- -y
 ENV PATH /root/.cargo/bin:$PATH
 RUN cargo install --git https://github.com/lotabout/rargs.git
 
 # Go
-RUN curl -sfSL --retry 3 https://dl.google.com/go/go1.12.linux-amd64.tar.gz -o go.tar.gz \
-    && tar xzf go.tar.gz -C /usr/local \
-    && rm go.tar.gz
+COPY --from=go-builder /usr/local/go/LICENSE /usr/local/go/README.md /usr/local/go
+COPY --from=go-builder /usr/local/go/bin/ /usr/local/go/bin/
+COPY --from=go-builder /root/go/bin /root/go/bin
+COPY --from=go-builder /tmp/go /root/go
 ENV GOPATH /root/go
 ENV PATH $PATH:/usr/local/go/bin:/root/go/bin
-COPY --from=go-builder /root/go/bin /root/go/bin
-RUN mkdir -p /root/go/src/github.com/YuheiNakasaka/sayhuuzoku/db/ \
-    && curl -sfSL https://raw.githubusercontent.com/YuheiNakasaka/sayhuuzoku/master/db/data.db \
-      -o /root/go/src/github.com/YuheiNakasaka/sayhuuzoku/db/data.db \
-    && ln -s /root/go/src/github.com/YuheiNakasaka/sayhuuzoku/db / \
-    && mkdir -p /root/go/src/github.com/YuheiNakasaka/sayhuuzoku/scraping/ \
-    && curl -sfSL https://raw.githubusercontent.com/YuheiNakasaka/sayhuuzoku/master/scraping/shoplist.txt \
-      -o /root/go/src/github.com/YuheiNakasaka/sayhuuzoku/scraping/shoplist.txt \
-    && mkdir -p /usr/local/share/sayhuuzoku \
-    && curl -sfSL https://raw.githubusercontent.com/YuheiNakasaka/sayhuuzoku/master/README.md \
-      -o /usr/local/share/sayhuuzoku/README.md
-RUN mkdir -p /usr/local/share/gron \
-    && curl -sfSL https://raw.githubusercontent.com/tomnomnom/gron/master/LICENSE \
-      -o /usr/local/share/gron/LICENSE \
-    && curl -sfSL https://raw.githubusercontent.com/tomnomnom/gron/master/README.mkd \
-      -o /usr/local/share/gron/README.mkd
-RUN mkdir -p /usr/local/share/ttyrec2gif \
-    && curl -sfSL https://raw.githubusercontent.com/sugyan/ttyrec2gif/master/README.md \
-      -o /usr/local/share/ttyrec2gif/README.md \
-    && curl -sfSL https://raw.githubusercontent.com/sugyan/ttyrec2gif/master/LICENSE \
-      -o /usr/local/share/ttyrec2gif/LICENSE
-RUN mkdir -p /usr/local/share/owari \
-    && curl -sfSL https://raw.githubusercontent.com/xztaityozx/owari/master/README.md \
-      -o /usr/local/share/owari/README.md \
-    && curl -sfSL https://raw.githubusercontent.com/xztaityozx/owari/master/LICENSE \
-      -o /usr/local/share/owari/LICENSE
-RUN mkdir -p /usr/local/share/align \
-    && curl -sfSL https://raw.githubusercontent.com/jiro4989/align/master/README.adoc \
-      -o /usr/local/share/align/README.adoc \
-    && curl -sfSL https://raw.githubusercontent.com/jiro4989/align/master/LICENSE \
-      -o /usr/local/share/align/LICENSE
-RUN mkdir -p /usr/local/share/taishoku \
-    && curl -sfSL https://raw.githubusercontent.com/jiro4989/taishoku/master/README.adoc \
-      -o /usr/local/share/taishoku/README.adoc \
-    && curl -sfSL https://raw.githubusercontent.com/jiro4989/taishoku/master/LICENSE \
-      -o /usr/local/share/taishoku/LICENSE
-RUN mkdir -p /usr/local/share/textimg \
-    && curl -sfSL https://raw.githubusercontent.com/jiro4989/textimg/master/README.adoc \
-      -o /usr/local/share/textimg/README.adoc \
-    && curl -sfSL https://raw.githubusercontent.com/jiro4989/textimg/master/LICENSE \
-      -o /usr/local/share/textimg/LICENSE
-RUN mkdir -p /usr/local/share/ke2daira \
-    && curl -sfSL https://raw.githubusercontent.com/ryuichiueda/ke2daira/master/README.md \
-      -o /usr/local/share/ke2daira/README.md \
-    && curl -sfSL https://raw.githubusercontent.com/ryuichiueda/ke2daira/master/README.en.md \
-      -o /usr/local/share/ke2daira/README.en.md \
-    && curl -sfSL https://raw.githubusercontent.com/ryuichiueda/ke2daira/master/LICENSE \
-      -o /usr/local/share/ke2daira/LICENSE
+RUN ln -s /root/go/src/github.com/YuheiNakasaka/sayhuuzoku/db /
 
 # Ruby
 COPY --from=ruby-builder /usr/local/bin /usr/local/bin
