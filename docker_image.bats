@@ -743,3 +743,8 @@
   run docker container run --rm ${DOCKER_IMAGE} bash -c "echo シェル 芸 | ke2daira"
   [ "$output" = 'ゲェル シイ' ]
 }
+
+@test "man" {
+  run docker container run --rm ${DOCKER_IMAGE} bash -c "man シェル芸 |& cat"
+  [ "$output" = 'シェル芸 というマニュアルはありません' ]
+}
