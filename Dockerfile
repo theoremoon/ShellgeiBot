@@ -263,7 +263,9 @@ RUN --mount=type=cache,target=/var/cache/apt \
       mono-runtime\
       firefox\
       lua5.3 php7.2 php7.2-cli php7.2-common\
-      nodejs
+      nodejs\
+      graphviz\
+      nim
 
 # Rust
 RUN curl -sfSL https://sh.rustup.rs | sh -s -- -y
