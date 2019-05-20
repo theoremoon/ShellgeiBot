@@ -198,6 +198,11 @@ RUN curl -sfSLO --retry 3 https://git.io/echo-meme.deb \
 RUN curl -sfSLO https://www.unicode.org/Public/UCD/latest/ucd/NormalizationTest.txt
 RUN curl -sfSLO https://www.unicode.org/Public/UCD/latest/ucd/NamesList.txt
 
+# pokemonsay
+RUN git clone http://github.com/possatti/pokemonsay \
+    && cd pokemonsay \
+    && ./install.sh
+
 # apt
 RUN --mount=type=cache,target=/var/cache/apt \
     --mount=type=cache,target=/var/lib/apt \
@@ -222,7 +227,7 @@ RUN --mount=type=cache,target=/var/cache/apt \
       figlet\
       haskell-platform\
       mecab mecab-ipadic mecab-ipadic-utf8\
-      bsdgames fortunes cowsay fortunes-off cowsay-off\
+      bsdgames fortunes cowsay fortunes-off fortune-mod cowsay-off\
       datamash\
       gawk\
       libxml2-utils\
