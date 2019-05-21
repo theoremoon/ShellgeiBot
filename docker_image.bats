@@ -2,8 +2,6 @@
 
 @test "Ruby" {
   run bash -c "echo シェル芸 | ruby -nle 'puts \$_'"
-  echo "status: ${status}"
-  echo "output: ${output}"
   [ "$output" = "シェル芸" ]
 }
 
@@ -749,4 +747,9 @@
 @test "pokemonsay" {
   run pokemonsay --help
   [ "${lines[0]}" = '  Description: Pokemonsay makes a pokémon say something to you.' ]
+}
+
+@test "saizeriya" {
+  run saizeriya
+  [ $status -eq 0 ]
 }
