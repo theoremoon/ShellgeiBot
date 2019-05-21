@@ -199,9 +199,10 @@ RUN curl -sfSLO https://www.unicode.org/Public/UCD/latest/ucd/NormalizationTest.
 RUN curl -sfSLO https://www.unicode.org/Public/UCD/latest/ucd/NamesList.txt
 
 # pokemonsay
-RUN git clone http://github.com/possatti/pokemonsay \
-    && cd pokemonsay \
-    && ./install.sh
+RUN git clone --depth 1 http://github.com/possatti/pokemonsay \
+    && (cd pokemonsay; ./install.sh ) \
+    && rm -r pokemonsay
+ENV PATH $PATH:/root/bin
 
 # apt
 RUN --mount=type=cache,target=/var/cache/apt \
