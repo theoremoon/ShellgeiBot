@@ -314,6 +314,10 @@ COPY --from=dotnet-builder /noc/README.md /usr/local/share/noc/README.md
 # gawk 5.0 / Open-usp-Tukubai
 COPY --from=general-builder /usr/local /usr/local
 
+## Nim
+ENV PATH $PATH:/root/.nimble/bin
+RUN nimble install rect -Y
+
 # man
 RUN mv /usr/bin/man.REAL /usr/bin/man
 
