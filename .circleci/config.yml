@@ -12,11 +12,7 @@ jobs:
       # documented at https://circleci.com/docs/2.0/circleci-images/
       # - image: circleci/postgres:9.4
 
-    #### TEMPLATE_NOTE: go expects specific checkout path representing url
-    #### expecting it in the form of
-    ####   /go/src/github.com/circleci/go-tool
-    ####   /go/src/bitbucket.org/circleci/go-tool
-    working_directory: /go/src/github.com/theoldmoon0602/ShellGeiBot
+    working_directory: /go/src/github.com/theoldmoon0602/ShellgeiBot
     steps:
       - checkout
 
@@ -24,46 +20,9 @@ jobs:
       - run: dep ensure
       - run: go build
       - store_artifacts:
-          path: /go/src/github.com/theoldmoon0602/ShellGeiBot/ShellGeiBot
-  image-build:
-    environment:
-      DOCKER_IMAGE: theoldmoon0602/shellgeibot
-    docker:
-      - image: docker:stable
-        environment:
-          DOCKER_BUILDKIT: "1"  # Enable Docker BuildKit
-    steps:
-      - checkout
-      - setup_remote_docker:
-          docker_layer_caching: true  # BuildKit の DLC はまだ効かないっぽい
-          version: "18.09.3"
-      - run:
-          name: Login Docker Hub
-          command: echo ${DOCKER_PASS} | docker login -u ${DOCKER_USER} --password-stdin
-      - run:
-          name: Build Docker image
-          command: docker build -t ${DOCKER_IMAGE} --progress=plain .
-      - run:
-          name: Push Docker image to Docker Hub
-          command: |
-            docker push ${DOCKER_IMAGE}:latest
-            DATE_TAG=$(date +%Y%m%d)
-            docker tag ${DOCKER_IMAGE}:latest ${DOCKER_IMAGE}:${DATE_TAG}
-            docker push ${DOCKER_IMAGE}:${DATE_TAG}
-
+          path: /go/src/github.com/theoldmoon0602/ShellgeiBot/ShellgeiBot
 workflows:
   version: 2
   commit-workflow:
     jobs:
       - build
-      - image-build
-  scheduled-workflow:
-    triggers:
-      - schedule:
-          cron: "0 6 * * *"
-          filters:
-            branches:
-              only:
-                - master
-    jobs:
-      - image-build
