@@ -309,6 +309,7 @@ COPY --from=dotnet-builder /noc/README.md /usr/local/share/noc/README.md
 COPY --from=general-builder /usr/local /usr/local
 
 ## Nim
+ENV PATH $PATH:/root/.nimble/bin
 RUN nimble install rect -Y
 
 # man
