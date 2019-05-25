@@ -167,7 +167,6 @@
   [ $status -eq 0 ]
 }
 
-# 2回指定されている
 @test "cowsay" {
   run cowsay シェル芸
   [ "${lines[0]}" = ' __________' ]
@@ -236,7 +235,6 @@
   [ "$output" = "EPERM 1 許可されていない操作です" ]
 }
 
-# strace は docker 上で実行する場合、--cap-add=SYS_PTRACE と --security-opt="seccomp=unconfined" が必要になるため、不要では
 @test "strace" {
   run strace -V
   [[ "${lines[0]}" =~ "strace -- version" ]]
@@ -728,13 +726,27 @@
   [ "${lines[0]}" = '  File: NamesList.txt' ]
 }
 
-@test "ke2dair" {
+@test "ke2daira" {
   run bash -c "echo シェル 芸 | ke2daira"
   [ "$output" = 'ゲェル シイ' ]
 }
 
 @test "man" {
   run bash -c "man シェル芸 |& cat"
-  echo "output: '{$output}''"
   [ "$output" = 'シェル芸 というマニュアルはありません' ]
+}
+
+@test "graphviz" {
+  run dot -V
+  [[ "${lines[0]}" =~ 'dot - graphviz' ]]
+}
+
+@test "nim" {
+  run nim --help
+  [[ "${lines[0]}" =~ 'Nim Compiler' ]]
+}
+
+@test "pokemonsay" {
+  run pokemonsay --help
+  [ "${lines[0]}" = '  Description: Pokemonsay makes a pokémon say something to you.' ]
 }
