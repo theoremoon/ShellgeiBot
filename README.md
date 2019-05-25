@@ -1,5 +1,13 @@
 # ShellGeiBot
 
+## Twitter
+
+- [@minyoruminyon](https://twitter.com/minyoruminyon)
+
+## Specification
+
+- https://furutsuki.hatenablog.com/entry/2018/07/13/221806
+
 ## Build Docker image
 
 ```sh
@@ -12,5 +20,5 @@ $ ./build.bash shellgeibot:latest
 $ docker container run --rm \
   -v $(pwd):/root/src \
   shellgeibot:latest \
-  /bin/bash -c "apt update && apt install -y bats && bats /root/src/docker_image.bats"
+  /bin/bash -c "bats /root/src/docker_image.bats"
 ```

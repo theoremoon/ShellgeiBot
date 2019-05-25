@@ -275,7 +275,8 @@ RUN --mount=type=cache,target=/var/cache/apt \
       lua5.3 php7.2 php7.2-cli php7.2-common\
       nodejs\
       graphviz\
-      nim
+      nim\
+      bats
 
 # Rust
 RUN curl -sfSL https://sh.rustup.rs | sh -s -- -y
