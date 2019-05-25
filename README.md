@@ -8,17 +8,17 @@
 
 - https://furutsuki.hatenablog.com/entry/2018/07/13/221806
 
-## Build Docker image
+## Official Docker Image
 
-```sh
-$ ./build.bash shellgeibot:latest
-```
+- DockerHub: https://hub.docker.com/r/theoldmoon0602/shellgeibot
+- GitHub: https://github.com/theoldmoon0602/ShellgeiBot-Image
 
-## Test Docker image
+## Author
 
-```sh
-$ docker container run --rm \
-  -v $(pwd):/root/src \
-  shellgeibot:latest \
-  /bin/bash -c "bats /root/src/docker_image.bats"
-```
+theoldmooon0602
+
+## LICENSE
+
+Apache License
+
+
