@@ -204,6 +204,10 @@ RUN git clone --depth 1 http://github.com/possatti/pokemonsay \
     && rm -r pokemonsay
 ENV PATH $PATH:/root/bin
 
+# saizeriya
+RUN curl -sfSL --retry 3 https://raw.githubusercontent.com/horo17/saizeriya/master/saizeriya -o /usr/local/bin/saizeriya \
+    && chmod u+x /usr/local/bin/saizeriya
+
 # apt
 RUN --mount=type=cache,target=/var/cache/apt \
     --mount=type=cache,target=/var/lib/apt \
