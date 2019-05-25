@@ -39,7 +39,7 @@ jobs:
           version: "18.09.3"
       - run:
           name: Login Docker Hub
-          command: cat ${DOCKER_PASS} | docker login -u ${DOCKER_USER} --password-stdin
+          command: echo ${DOCKER_PASS} | docker login -u ${DOCKER_USER} --password-stdin
       - run:
           name: Build Docker image
           command: docker build -t ${DOCKER_IMAGE} --progress=plain .
