@@ -18,6 +18,7 @@ import (
 type BotConfigJson struct {
 	DockerImage string   `json:"dockerimage"`
 	Workdir     string   `json:"workdir"`
+	Memory      string   `json:"memory"`
 	Timeout     string   `json:"timeout"`
 	Tags        []string `json:"tags"`
 }
@@ -25,6 +26,7 @@ type BotConfigJson struct {
 type BotConfig struct {
 	DockerImage string
 	Workdir     string
+	Memory      string
 	Timeout     time.Duration
 	Tags        []string
 }
@@ -49,6 +51,7 @@ func ParseBotConfig(file string) (BotConfig, error) {
 	if err != nil {
 		return config, err
 	}
+	config.Memory = c.Memory   // TODO: check memory size string
 	config.Timeout, err = time.ParseDuration(c.Timeout)
 	if err != nil {
 		return config, err
@@ -113,7 +116,8 @@ func RunCmd(cmdstr string, botConfig BotConfig) (string, []string, error) {
 	// execute shellgei in the docker
 	cmd := exec.Command("docker", "run", "--rm",
 		"--net=none",
-		"-m", "10M", "--oom-kill-disable",
+		"-m", botConfig.Memory,
+		"--oom-kill-disable",
 		"--pids-limit", "1024",
 		"--cap-add", "sys_ptrace",
 		"--name", name,
