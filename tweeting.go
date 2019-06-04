@@ -34,10 +34,14 @@ func ExtractShellgei(tweet anaconda.Tweet, self anaconda.User, api *anaconda.Twi
 
 	text := tweet.FullText
 
-    // expand url
-    for _, url := range tweet.Entities.Urls {
-        text = strings.Replace(text, url.Url, url.Expanded_url[len("http://"):], -1)
-    }
+	// expand url
+	for _, url := range tweet.Entities.Urls {
+	    if strings.HasPrefix(url.Expanded_url, "https://") {
+		text = strings.Replace(text, url.Url, url.Expanded_url[len("https://"):], -1)
+	    } else if strings.HasPrefix(url.Expanded_url, "http://") {
+		text = strings.Replace(text, url.Url, url.Expanded_url[len("http://"):], -1)
+	    }
+	}
 	text = html.UnescapeString(text)
 	text = RemoveMentionSymbol(self, text)
 
