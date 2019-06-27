@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/ChimeraCoder/anaconda"
 	"html"
 	"io/ioutil"
@@ -18,54 +19,73 @@ type TwitterKeys struct {
 	AccessSecret   string `json:"AccessSecret"`
 }
 
-func ExtractShellgei(tweet anaconda.Tweet, self anaconda.User, api *anaconda.TwitterApi, tags []string) string {
+func ExtractShellgei(tweet anaconda.Tweet, self anaconda.User, api *anaconda.TwitterApi, tags []string) (string, []string, error) {
+	// self recursion
+	if tweet.QuotedStatusID == tweet.Id {
+		return "", nil, fmt.Errorf("self recursion")
+	}
+
+	// if it is quoted tweet of shellgeibot's tweet
+	// then dig deeper (ignore shellgeibot's output)
 	if tweet.User.Id == self.Id {
-		if tweet.QuotedStatusID == 0 {
-			return ""
+		if tweet.QuotedStatusID == 0 { // will never be true
+			return "", nil, fmt.Errorf("quote tweet by ownself")
 		}
+
+		// get quoted tweet and dig deeper
 		v := url.Values{}
 		quoted, err := api.GetTweet(tweet.QuotedStatusID, v)
 		if err != nil {
-			log.Println(err)
-			return ""
+			return "", nil, err
 		}
 		return ExtractShellgei(quoted, self, api, tags)
 	}
 
+	// get tweet text
 	text := tweet.FullText
 
 	// expand url
 	for _, url := range tweet.Entities.Urls {
-	    if strings.HasPrefix(url.Expanded_url, "https://") {
-		text = strings.Replace(text, url.Url, url.Expanded_url[len("https://"):], -1)
-	    } else if strings.HasPrefix(url.Expanded_url, "http://") {
-		text = strings.Replace(text, url.Url, url.Expanded_url[len("http://"):], -1)
-	    }
+		if strings.HasPrefix(url.Expanded_url, "https://") {
+			text = strings.Replace(text, url.Url, url.Expanded_url[len("https://"):], -1)
+		} else if strings.HasPrefix(url.Expanded_url, "http://") {
+			text = strings.Replace(text, url.Url, url.Expanded_url[len("http://"):], -1)
+		}
 	}
+	// list of picture url
+	media_urls := make([]string, 0, 4)
+	for _, media := range tweet.ExtendedEntities.Media {
+		media_urls = append(media_urls, media.Media_url_https)
+
+		// remove media url
+		text = strings.Replace(text, media.Url, "", -1)
+	}
+
+	// treat
 	text = html.UnescapeString(text)
 	text = RemoveMentionSymbol(self, text)
-
 	for _, t := range tags {
 		text = strings.Replace(text, t, "", -1)
 	}
-	text = strings.TrimSpace(text)
+	shellgei := strings.TrimSpace(text)
+
 
 	if tweet.QuotedStatusID == 0 {
-		return text
-	}
-	if tweet.QuotedStatusID == tweet.Id {
-		return text
+		return shellgei, media_urls, nil
 	}
 
+	// tweet chain
 	v := url.Values{}
 	quoted, err := api.GetTweet(tweet.QuotedStatusID, v)
 	if err != nil {
-		log.Println(err)
-		return text
+		return "", nil, err
 	}
 
-	quote_text := ExtractShellgei(quoted, self, api, tags)
-	return quote_text + text
+	quote_text, quote_urls, err := ExtractShellgei(quoted, self, api, tags)
+	if err != nil {
+		return "", nil, err
+	}
+	return quote_text + shellgei, append(quote_urls, media_urls...), nil
 }
 
 func ParseTwitterKey(file string) (TwitterKeys, error) {
@@ -124,7 +144,7 @@ func TweetResult(api *anaconda.TwitterApi, tweet anaconda.Tweet, result string, 
 		result = result + " " + TweetUrl(tweet)
 	}
 
-	/// post done message
+	// post message
 	_, err := api.PostTweet(result, v)
 	return err
 }

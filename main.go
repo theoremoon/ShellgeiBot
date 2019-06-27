@@ -22,13 +22,11 @@ import (
 )
 
 func ProcessTweet(tweet anaconda.Tweet, self anaconda.User, api *anaconda.TwitterApi, db *sql.DB, botConfig BotConfig) {
-
-	// check valid shellgei tweet
+	// check if it is valid shellgei tweet
 	if tweet.RetweetedStatus != nil {
 		return
 	}
-	is := IsShellGeiTweet(tweet.FullText, botConfig.Tags)
-	if !is {
+	if !IsShellGeiTweet(tweet.FullText, botConfig.Tags) {
 		return
 	}
 	if self.Id == tweet.User.Id {
@@ -38,8 +36,12 @@ func ProcessTweet(tweet anaconda.Tweet, self anaconda.User, api *anaconda.Twitte
 		return
 	}
 
-	text := ExtractShellgei(tweet, self, api, botConfig.Tags)
 	t, err := tweet.CreatedAtTime()
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	text, media_urls, err := ExtractShellgei(tweet, self, api, botConfig.Tags)
 	if err != nil {
 		log.Println(err)
 		return
@@ -47,7 +49,7 @@ func ProcessTweet(tweet anaconda.Tweet, self anaconda.User, api *anaconda.Twitte
 
 	InsertShellGei(db, tweet.User.Id, tweet.User.ScreenName, tweet.Id, text, t.Unix())
 
-	result, b64imgs, err := RunCmd(text, botConfig)
+	result, b64imgs, err := RunCmd(text, media_urls, botConfig)
 	result = MakeTweetable(result)
 	InsertResult(db, tweet.Id, result, b64imgs, err)
 
@@ -127,7 +129,7 @@ func botTest(botConfigFile, scriptFile string) {
 		log.Fatal(err)
 	}
 
-	result, b64imgs, err := RunCmd(string(script), botConfig)
+	result, b64imgs, err := RunCmd(string(script), []string{}, botConfig)
 	result = MakeTweetable(result)
 
 	if err != nil {

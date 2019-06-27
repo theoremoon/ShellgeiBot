@@ -7,11 +7,14 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
+	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"time"
 )
 
@@ -51,7 +54,7 @@ func ParseBotConfig(file string) (BotConfig, error) {
 	if err != nil {
 		return config, err
 	}
-	config.Memory = c.Memory   // TODO: check memory size string
+	config.Memory = c.Memory // TODO: check memory size string
 	config.Timeout, err = time.ParseDuration(c.Timeout)
 	if err != nil {
 		return config, err
@@ -76,6 +79,30 @@ func RandStr(length int) (string, error) {
 	return string(randstr), nil
 }
 
+// https://golangcode.com/download-a-file-from-a-url/
+// DownloadFile will download a url to a local file. It's efficient because it will
+// write as it downloads and not load the whole file into memory.
+func DownloadFile(filepath string, url string) error {
+
+	// Get the data
+	resp, err := http.Get(url)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	// Create the file
+	out, err := os.Create(filepath)
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+
+	// Write the body to file
+	_, err = io.Copy(out, resp.Body)
+	return err
+}
+
 type StdError struct {
 	Msg string
 }
@@ -84,34 +111,47 @@ func (e *StdError) Error() string {
 	return e.Msg
 }
 
-func RunCmd(cmdstr string, botConfig BotConfig) (string, []string, error) {
-	// create shellgei script file
+func RunCmd(cmdstr string, media_urls []string, botConfig BotConfig) (string, []string, error) {
+	// create shellgei script file and write shellgei content
 	name, err := RandStr(16)
 	if err != nil {
 		return "", []string{}, err
 	}
-	dirname := name + "__images"
-
 	path := filepath.Join(botConfig.Workdir, name)
 	file, err := os.Create(path)
 	if err != nil {
 		return "", []string{}, fmt.Errorf("error: %s, directory permission denied?", err)
 	}
-	defer func() { _ = file.Close() }()
 	defer func() { _ = os.RemoveAll(path) }()
+	_, err = file.WriteString(cmdstr)
+	if err != nil {
+		return "", []string{}, fmt.Errorf("errors: %s, failed to write", err)
+	}
+	file.Close()
 
-	imgdir_path := filepath.Join(botConfig.Workdir, dirname)
+	// create images directory
+	imgdir_path := filepath.Join(botConfig.Workdir, name+"__images")
 	err = os.MkdirAll(imgdir_path, 0777)
 	if err != nil {
 		return "", []string{}, fmt.Errorf("error: %s, could not create directory", err)
 	}
 	defer func() { _ = os.RemoveAll(imgdir_path) }()
 
-	_, err = file.WriteString(cmdstr)
+	// create media directory
+	mediadir_path := filepath.Join(botConfig.Workdir, name+"__media")
+	err = os.MkdirAll(mediadir_path, 0777)
 	if err != nil {
-		return "", []string{}, fmt.Errorf("errors: %s, write failed", err)
+		return "", []string{}, fmt.Errorf("error: %s, could not create directory", err)
 	}
-	file.Close()
+	defer func() { _ = os.RemoveAll(mediadir_path) }()
+
+	// download medias
+	for i, url := range media_urls {
+		err = DownloadFile(filepath.Join(mediadir_path, strconv.Itoa(i)), url)
+		if err != nil {
+			return "", nil, fmt.Errorf("error: %s, failed to download a media", err)
+		}
+	}
 
 	// execute shellgei in the docker
 	cmd := exec.Command("docker", "run", "--rm",
@@ -121,7 +161,10 @@ func RunCmd(cmdstr string, botConfig BotConfig) (string, []string, error) {
 		"--pids-limit", "1024",
 		"--cap-add", "sys_ptrace",
 		"--name", name,
-		"-v", path+":/"+name, "-v", imgdir_path+":/images", botConfig.DockerImage,
+		"-v", path+":/"+name,
+		"-v", imgdir_path+":/images",
+		"-v", mediadir_path+":/media",
+		botConfig.DockerImage,
 		"bash", "-c", fmt.Sprintf("chmod +x /%s && sync && ./%s | head -c 100K", name, name))
 
 	defer func() {
@@ -173,6 +216,9 @@ func RunCmd(cmdstr string, botConfig BotConfig) (string, []string, error) {
 		if err != nil {
 			log.Println(err)
 			return out.String(), []string{}, nil
+		}
+		if len(img) == 0 {
+			continue
 		}
 		b64img := base64.StdEncoding.EncodeToString(img)
 		b64imgs = append(b64imgs, b64img)
