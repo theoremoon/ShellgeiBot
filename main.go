@@ -32,9 +32,11 @@ func ProcessTweet(tweet anaconda.Tweet, self anaconda.User, api *anaconda.Twitte
 	if self.Id == tweet.User.Id {
 		return
 	}
+	/*
 	if !IsFollower(api, tweet) {
 		return
 	}
+	*/
 
 	t, err := tweet.CreatedAtTime()
 	if err != nil {
