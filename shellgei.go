@@ -22,6 +22,7 @@ type BotConfigJson struct {
 	DockerImage string   `json:"dockerimage"`
 	Workdir     string   `json:"workdir"`
 	Memory      string   `json:"memory"`
+	MediaSize      int64   `json:"mediasize"`
 	Timeout     string   `json:"timeout"`
 	Tags        []string `json:"tags"`
 }
@@ -30,6 +31,7 @@ type BotConfig struct {
 	DockerImage string
 	Workdir     string
 	Memory      string
+	MediaSize      int64
 	Timeout     time.Duration
 	Tags        []string
 }
@@ -55,6 +57,7 @@ func ParseBotConfig(file string) (BotConfig, error) {
 		return config, err
 	}
 	config.Memory = c.Memory // TODO: check memory size string
+	config.MediaSize = c.MediaSize
 	config.Timeout, err = time.ParseDuration(c.Timeout)
 	if err != nil {
 		return config, err
@@ -212,8 +215,8 @@ func RunCmd(cmdstr string, media_urls []string, botConfig BotConfig) (string, []
 		if err != nil {
 			continue
 		}
-		// if file size is zero or bigger than 1G
-		if finfo.Size() == 0 || finfo.Size() >= 1024 * 1024 * 1024 {
+		// if file size is zero or bigger than MediaSize[MB]
+		if finfo.Size() == 0 || finfo.Size() >= 1024 * 1024 * botConfig.MediaSize {
 			continue
 		}
 
