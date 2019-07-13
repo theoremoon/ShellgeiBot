@@ -51,7 +51,7 @@ func ProcessTweet(tweet anaconda.Tweet, self anaconda.User, api *anaconda.Twitte
 
 	result, b64imgs, err := RunCmd(text, media_urls, botConfig)
 	result = MakeTweetable(result)
-	InsertResult(db, tweet.Id, result, b64imgs, err)
+	InsertResult(db, tweet.Id, result, err)
 
 	if err != nil {
 		if err.(*StdError) == nil {

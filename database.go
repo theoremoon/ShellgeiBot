@@ -3,7 +3,6 @@ package main
 import (
 	"database/sql"
 	_ "github.com/mattn/go-sqlite3"
-	"strings"
 )
 
 const Schema = `
@@ -13,18 +12,17 @@ create table if not exists shellgeis (
   tweet_id integer,
   shellgei text,
   result text default "",
-	b64img text default "",
   error text default "",
   timestamp integer
 );
 `
 
-func InsertResult(db *sql.DB, tweet_id int64, result string, b64imgs []string, err error) error {
+func InsertResult(db *sql.DB, tweet_id int64, result string, err error) error {
 	err_str := ""
 	if err != nil {
 		err_str = err.Error()
 	}
-	_, err2 := db.Exec("update shellgeis set result=?, b64img=?, error=? where tweet_id=?", result, strings.Join(b64imgs, ","), err_str, tweet_id)
+	_, err2 := db.Exec("update shellgeis set result=?, error=? where tweet_id=?", result, err_str, tweet_id)
 	return err2
 }
 

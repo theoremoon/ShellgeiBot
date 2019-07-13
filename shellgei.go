@@ -167,13 +167,6 @@ func RunCmd(cmdstr string, media_urls []string, botConfig BotConfig) (string, []
 		botConfig.DockerImage,
 		"bash", "-c", fmt.Sprintf("chmod +x /%s && sync && ./%s | head -c 100K", name, name))
 
-	defer func() {
-		cmd := exec.Command("docker", "stop", name)
-		_ = cmd.Run()
-		cmd = exec.Command("docker", "rm", name)
-		_ = cmd.Run()
-	}()
-
 	// get result
 	var out bytes.Buffer
 	var stderr bytes.Buffer
@@ -191,7 +184,10 @@ func RunCmd(cmdstr string, media_urls []string, botConfig BotConfig) (string, []
 
 	select {
 	case <-ctx.Done():
-		// do nothing
+		// kill send SIGKILL immediately
+		// though stop send SIGKILL after sending SIGTERM
+		cmd := exec.Command("docker", "kill", name)
+		_ = cmd.Run()
 	case err = <-errChan:
 		// do nothing
 	}

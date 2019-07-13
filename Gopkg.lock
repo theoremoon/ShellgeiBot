@@ -50,12 +50,32 @@
   revision = "4cff9ef7b7003713efa191899dbaab8fa75e3e73"
 
 [[projects]]
+  branch = "master"
+  digest = "1:85f2ad67d2bbf1b25314545cd64db43cf8bf51da30b175d80fefd444951e636a"
+  name = "github.com/mattn/go-sixel"
+  packages = ["."]
+  pruneopts = ""
+  revision = "a8fac8fa7d811a5c1219264c6a9c287c826af5a2"
+
+[[projects]]
   digest = "1:2ae7bef8115e1538100c327f6be0e77c5d6ec1681c6f2779dcbde2a77afa2341"
   name = "github.com/mattn/go-sqlite3"
   packages = ["."]
   pruneopts = ""
   revision = "ed69081a91fd053f17672236b0dd52ba7485e1a3"
   version = "v1.4.0"
+
+[[projects]]
+  digest = "1:9a4867a962086c10a4d4ee2dc1ba4b349f92d6a1458b4e573fb06c54c04a5bdd"
+  name = "github.com/soniakeys/quant"
+  packages = [
+    ".",
+    "internal",
+    "median",
+  ]
+  pruneopts = ""
+  revision = "0a3861b3bd925b434c67c93a15633ced8475092d"
+  version = "v1.0.0"
 
 [[projects]]
   branch = "master"
@@ -70,6 +90,7 @@
   analyzer-version = 1
   input-imports = [
     "github.com/ChimeraCoder/anaconda",
+    "github.com/mattn/go-sixel",
     "github.com/mattn/go-sqlite3",
   ]
   solver-name = "gps-cdcl"
