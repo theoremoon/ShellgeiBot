@@ -13,6 +13,16 @@
 - DockerHub: https://hub.docker.com/r/theoldmoon0602/shellgeibot
 - GitHub: https://github.com/theoldmoon0602/ShellgeiBot-Image
 
+## Official Mascot character
+
+King-Unko
+
+    　　　　　　👑
+    　　　　（💩💩💩）
+    　　　（💩👁💩👁💩）
+    　　（💩💩💩👃💩💩💩）
+    　（💩💩💩💩👄💩💩💩💩）
+
 ## Author
 
 theoldmooon0602
