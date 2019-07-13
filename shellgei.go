@@ -207,14 +207,20 @@ func RunCmd(cmdstr string, media_urls []string, botConfig BotConfig) (string, []
 		if len(files) <= i {
 			break
 		}
+		path := filepath.Join(imgdir_path, files[i].Name())
+		finfo, err := os.Stat(path)
+		if err != nil {
+			continue
+		}
+		// if file size is zero or bigger than 1G
+		if finfo.Size() == 0 || finfo.Size() >= 1024 * 1024 * 1024 {
+			continue
+		}
 
-		img, err := ioutil.ReadFile(filepath.Join(imgdir_path, files[i].Name()))
+		img, err := ioutil.ReadFile(path)
 		if err != nil {
 			log.Println(err)
 			return out.String(), []string{}, nil
-		}
-		if len(img) == 0 {
-			continue
 		}
 		b64img := base64.StdEncoding.EncodeToString(img)
 		b64imgs = append(b64imgs, b64img)
