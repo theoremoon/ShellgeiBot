@@ -211,6 +211,15 @@ func RunCmd(cmdstr string, media_urls []string, botConfig BotConfig) (string, []
 			break
 		}
 		path := filepath.Join(imgdir_path, files[i].Name())
+		lfinfo, err := os.Lstat(path)
+		if err != nil {
+			continue
+		}
+		// do not follow the symlink
+		if lfinfo.Mode() & os.ModeSymlink != 0 {
+			continue
+		}
+
 		finfo, err := os.Stat(path)
 		if err != nil {
 			continue
