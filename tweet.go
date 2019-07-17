@@ -3,13 +3,14 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/ChimeraCoder/anaconda"
 	"html"
 	"io/ioutil"
 	"log"
 	"net/url"
 	"strings"
 	"unicode"
+
+	"github.com/ChimeraCoder/anaconda"
 )
 
 type TwitterKeys struct {
@@ -66,17 +67,7 @@ func ExtractShellgei(tweet anaconda.Tweet, self anaconda.User, api *anaconda.Twi
 	text = RemoveMentionSymbol(self, text)
 
 	// remove tags
-	rtext := []rune(text)
-	deletecount := 0
-	for _, tag := range tweet.Entities.Hashtags {
-		for _, t := range tags {
-			if tag.Text == t {
-				rtext = append(rtext[:tag.Indices[0]-deletecount], rtext[tag.Indices[1]-deletecount:]...)
-				deletecount += tag.Indices[1] - tag.Indices[0]
-			}
-		}
-	}
-	shellgei := strings.TrimSpace(string(rtext))
+	shellgei := removeTags(text, tweet.Entities, tags)
 
 	if tweet.QuotedStatusID == 0 {
 		return shellgei, media_urls, nil
@@ -94,6 +85,20 @@ func ExtractShellgei(tweet anaconda.Tweet, self anaconda.User, api *anaconda.Twi
 		return "", nil, err
 	}
 	return quote_text + shellgei, append(quote_urls, media_urls...), nil
+}
+
+func removeTags(text string, entities anaconda.Entities, tags []string) string {
+	rtext := []rune(text)
+	deletecount := 0
+	for _, tag := range entities.Hashtags {
+		for _, t := range tags {
+			if tag.Text == t {
+				rtext = append(rtext[:tag.Indices[0]-deletecount], rtext[tag.Indices[1]-deletecount:]...)
+				deletecount += tag.Indices[1] - tag.Indices[0]
+			}
+		}
+	}
+	return strings.TrimSpace(string(rtext))
 }
 
 func ParseTwitterKey(file string) (TwitterKeys, error) {
@@ -160,7 +165,7 @@ func TweetResult(api *anaconda.TwitterApi, tweet anaconda.Tweet, result string, 
 func IsShellGeiTweet(tweet anaconda.Tweet, tags []string) bool {
 	for _, tag := range tweet.Entities.Hashtags {
 		for _, t := range tags {
-			if (t == tag.Text) {
+			if t == tag.Text {
 				return true
 			}
 		}
