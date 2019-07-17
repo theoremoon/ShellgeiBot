@@ -70,7 +70,7 @@ func ExtractShellgei(tweet anaconda.Tweet, self anaconda.User, api *anaconda.Twi
 	deletecount := 0
 	for _, tag := range tweet.Entities.Hashtags {
 		for _, t := range tags {
-			if tag.Text == strings.TrimPrefix(t, "#") {
+			if tag.Text == t {
 				rtext = append(rtext[:tag.Indices[0]-deletecount], rtext[tag.Indices[1]-deletecount:]...)
 				deletecount += tag.Indices[1] - tag.Indices[0]
 			}
