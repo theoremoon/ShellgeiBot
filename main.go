@@ -26,7 +26,7 @@ func ProcessTweet(tweet anaconda.Tweet, self anaconda.User, api *anaconda.Twitte
 	if tweet.RetweetedStatus != nil {
 		return
 	}
-	if !IsShellGeiTweet(tweet.FullText, botConfig.Tags) {
+	if !IsShellGeiTweet(tweet, botConfig.Tags) {
 		return
 	}
 	if self.Id == tweet.User.Id {

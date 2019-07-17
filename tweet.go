@@ -64,11 +64,19 @@ func ExtractShellgei(tweet anaconda.Tweet, self anaconda.User, api *anaconda.Twi
 	// treat
 	text = html.UnescapeString(text)
 	text = RemoveMentionSymbol(self, text)
-	for _, t := range tags {
-		text = strings.Replace(text, t, "", -1)
-	}
-	shellgei := strings.TrimSpace(text)
 
+	// remove tags
+	rtext := []rune(text)
+	deletecount := 0
+	for _, tag := range tweet.Entities.Hashtags {
+		for _, t := range tags {
+			if tag.Text == strings.TrimPrefix(t, "#") {
+				rtext = append(rtext[:tag.Indices[0]-deletecount], rtext[tag.Indices[1]-deletecount:]...)
+				deletecount += tag.Indices[1] - tag.Indices[0]
+			}
+		}
+	}
+	shellgei := strings.TrimSpace(string(rtext))
 
 	if tweet.QuotedStatusID == 0 {
 		return shellgei, media_urls, nil
@@ -149,15 +157,15 @@ func TweetResult(api *anaconda.TwitterApi, tweet anaconda.Tweet, result string, 
 	return err
 }
 
-func IsShellGeiTweet(tweet string, tags []string) bool {
-	flag := false
-	for _, t := range tags {
-		if strings.Contains(tweet, t) {
-			flag = true
-			break
+func IsShellGeiTweet(tweet anaconda.Tweet, tags []string) bool {
+	for _, tag := range tweet.Entities.Hashtags {
+		for _, t := range tags {
+			if (t == tag.Text) {
+				return true
+			}
 		}
 	}
-	return flag
+	return false
 }
 
 func RemoveMentionSymbol(self anaconda.User, tweet string) string {
