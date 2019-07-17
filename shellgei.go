@@ -168,7 +168,7 @@ func RunCmd(cmdstr string, media_urls []string, botConfig BotConfig) (string, []
 		"-v", imgdir_path+":/images",
 		"-v", mediadir_path+":/media",
 		botConfig.DockerImage,
-		"bash", "-c", fmt.Sprintf("chmod +x /%s && sync && ./%s | head -c 100K", name, name))
+		"bash", "-c", fmt.Sprintf("chmod +x /%s && sync && ./%s", name, name))
 
 	// get result
 	var out bytes.Buffer
@@ -189,8 +189,7 @@ func RunCmd(cmdstr string, media_urls []string, botConfig BotConfig) (string, []
 	case <-ctx.Done():
 		// kill send SIGKILL immediately
 		// though stop send SIGKILL after sending SIGTERM
-		cmd := exec.Command("docker", "kill", name)
-		_ = cmd.Run()
+		_ = exec.Command("docker", "kill", name).Run()
 	case err = <-errChan:
 		// do nothing
 	}
@@ -204,39 +203,38 @@ func RunCmd(cmdstr string, media_urls []string, botConfig BotConfig) (string, []
 	}
 
 	// with image
-	b64imgs := make([]string, 4, 4)
+	b64imgs := make([]string, 0, 4)
+	readcount := 0
 
-	for i := 0; i < 4; i++ {
+	for i := 0; readcount < 4; i++ {
 		if len(files) <= i {
 			break
 		}
 		path := filepath.Join(imgdir_path, files[i].Name())
-		lfinfo, err := os.Lstat(path)
-		if err != nil {
-			continue
-		}
+
 		// do not follow the symlink
-		if lfinfo.Mode() & os.ModeSymlink != 0 {
+		lfinfo, err := os.Lstat(path)
+		if err != nil || lfinfo.Mode() & os.ModeSymlink != 0 {
 			continue
 		}
 
-		finfo, err := os.Stat(path)
-		if err != nil {
-			continue
-		}
 		// if file size is zero or bigger than MediaSize[MB]
-		if finfo.Size() == 0 || finfo.Size() >= 1024 * 1024 * botConfig.MediaSize {
+		finfo, err := os.Stat(path)
+		if err != nil || finfo.Size() == 0 || finfo.Size() >= 1024 * 1024 * botConfig.MediaSize {
 			continue
 		}
 
+		// read image file into memory
 		img, err := ioutil.ReadFile(path)
 		if err != nil {
 			log.Println(err)
-			return out.String(), []string{}, nil
+			continue
 		}
+
+		// encode to base64
 		b64img := base64.StdEncoding.EncodeToString(img)
 		b64imgs = append(b64imgs, b64img)
+		readcount += 1
 	}
-
 	return out.String(), b64imgs, nil
 }

@@ -145,6 +145,7 @@ func botTest(botConfigFile, scriptFile string) {
 	}
 
 	fmt.Println(result)
+	fmt.Println(len(b64imgs))
 	for _, b64img := range b64imgs {
 		imgBytes, err := base64.StdEncoding.DecodeString(b64img)
 		if err != nil {
