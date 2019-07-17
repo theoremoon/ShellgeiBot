@@ -2,112 +2,112 @@
 
 
 [[projects]]
-  digest = "1:2ee1ec060a2e71d2eb24755cb3f3867c52faa9895d2287d3c3bf09b01020cf32"
+  digest = "1:0b6cb5df05e2c41ee44748be84811849db358cdd6b6859eb6a07acd48891ac3c"
   name = "github.com/ChimeraCoder/anaconda"
   packages = ["."]
-  pruneopts = "UT"
-  revision = "9c68684170b980d5b4c2ed08fae9b530e659904d"
-  version = "v2.0.0"
+  pruneopts = ""
+  revision = "0cb3e4c3ff8c6df5c73d5058c64e9c4eb6299c4b"
+  version = "v1.0.0"
 
 [[projects]]
   branch = "master"
-  digest = "1:088fd1efa8fcd4f85c3e3c0d135f28114115517a2b215f2e39b67146d032ea33"
+  digest = "1:1632705b0fa9266d58506dfb2bf26dc502709c3911d5660cf278503fcfadf6ac"
   name = "github.com/ChimeraCoder/tokenbucket"
   packages = ["."]
-  pruneopts = "UT"
+  pruneopts = ""
   revision = "c5a927568de7aad8a58127d80bcd36ca4e71e454"
 
 [[projects]]
   branch = "master"
-  digest = "1:863cb3d06b96794fd14a54579116b7e704cd8bc395e9d0404a5ad236d3e198b4"
+  digest = "1:650520e175941762d4781168477eda2561c4e24fb0b0578761dda5b0e1382237"
   name = "github.com/azr/backoff"
   packages = ["."]
-  pruneopts = "UT"
+  pruneopts = ""
   revision = "53511d3c733003985b0b76f733df1f4d0095ee6a"
 
 [[projects]]
-  digest = "1:ffe9824d294da03b391f44e1ae8281281b4afc1bdaa9588c9097785e3af10cec"
+  digest = "1:0deddd908b6b4b768cfc272c16ee61e7088a60f7fe2f06c547bd3d8e1f8b8e77"
   name = "github.com/davecgh/go-spew"
   packages = ["spew"]
-  pruneopts = "UT"
+  pruneopts = ""
   revision = "8991bc29aa16c548c550c7ff78260e27b9ab7c73"
   version = "v1.1.1"
 
 [[projects]]
   branch = "master"
-  digest = "1:efe7dc6d12119a36c1a617b574e99ac9c5ca8fbff57eb283a60462552b7c782a"
+  digest = "1:5a57f88a1196908f330b6b10340aaa34b5594183e80a7659cac1bfbb3a88d84e"
   name = "github.com/dustin/go-jsonpointer"
   packages = ["."]
-  pruneopts = "UT"
+  pruneopts = ""
   revision = "ba0abeacc3dcca5b9b20f31509c46794edbc9965"
 
 [[projects]]
   branch = "master"
-  digest = "1:07263fbfa1c038e890b410f730279aa7adc217180f1c2f78c6dc80b3bbe9e819"
+  digest = "1:9140f1215e69e5b5f05ee4faf473f8532f8a62b2588c55f6ab4f467c31b5a5f8"
   name = "github.com/dustin/gojson"
   packages = ["."]
-  pruneopts = "UT"
+  pruneopts = ""
   revision = "2e71ec9dd5adce3b168cd0dbde03b5cc04951c30"
 
 [[projects]]
   branch = "master"
-  digest = "1:b5cfd8d62c46082a75974f2f5e167c272f7f7d47c7a21caf49b17a45a558a601"
+  digest = "1:557298cd915bb516580cc31452733e8bc48a21b029696f45e7ea2efc1d370af0"
   name = "github.com/garyburd/go-oauth"
   packages = ["oauth"]
-  pruneopts = "UT"
-  revision = "bca2e7f09a178fd36b034107a00e2323bca6a82e"
+  pruneopts = ""
+  revision = "4cff9ef7b7003713efa191899dbaab8fa75e3e73"
 
 [[projects]]
   branch = "master"
-  digest = "1:65356bf47445d48bc47cbeff079be3f3d09db367d8fd3618ee297a5fe754fccb"
+  digest = "1:85f2ad67d2bbf1b25314545cd64db43cf8bf51da30b175d80fefd444951e636a"
   name = "github.com/mattn/go-sixel"
   packages = ["."]
-  pruneopts = "UT"
+  pruneopts = ""
   revision = "a8fac8fa7d811a5c1219264c6a9c287c826af5a2"
 
 [[projects]]
-  digest = "1:79e87abf06b873987dee86598950f5b51732ac454d5a5cab6445a14330e6c9e3"
+  digest = "1:2ae7bef8115e1538100c327f6be0e77c5d6ec1681c6f2779dcbde2a77afa2341"
   name = "github.com/mattn/go-sqlite3"
   packages = ["."]
-  pruneopts = "UT"
-  revision = "b612a2feea6aa87c6d052d9086572551df06497e"
-  version = "v1.11.0"
+  pruneopts = ""
+  revision = "ed69081a91fd053f17672236b0dd52ba7485e1a3"
+  version = "v1.4.0"
 
 [[projects]]
-  digest = "1:0028cb19b2e4c3112225cd871870f2d9cf49b9b4276531f03438a88e94be86fe"
+  digest = "1:256484dbbcd271f9ecebc6795b2df8cad4c458dd0f5fd82a8c2fa0c29f233411"
   name = "github.com/pmezard/go-difflib"
   packages = ["difflib"]
-  pruneopts = "UT"
+  pruneopts = ""
   revision = "792786c7400a136282c1664665ae0a8db921c6c2"
   version = "v1.0.0"
 
 [[projects]]
-  digest = "1:019333fa267ea5a20a8638bb19b33f63d092a9c6c0446f3df56c563ad55ab491"
+  digest = "1:9a4867a962086c10a4d4ee2dc1ba4b349f92d6a1458b4e573fb06c54c04a5bdd"
   name = "github.com/soniakeys/quant"
   packages = [
     ".",
     "internal",
     "median",
   ]
-  pruneopts = "UT"
+  pruneopts = ""
   revision = "0a3861b3bd925b434c67c93a15633ced8475092d"
   version = "v1.0.0"
 
 [[projects]]
-  digest = "1:972c2427413d41a1e06ca4897e8528e5a1622894050e2f527b38ddf0f343f759"
+  digest = "1:381bcbeb112a51493d9d998bbba207a529c73dbb49b3fd789e48c63fac1f192c"
   name = "github.com/stretchr/testify"
   packages = ["assert"]
-  pruneopts = "UT"
+  pruneopts = ""
   revision = "ffdc059bfe9ce6a4e144ba849dbedead332c6053"
   version = "v1.3.0"
 
 [[projects]]
   branch = "master"
-  digest = "1:76ee51c3f468493aff39dbacc401e8831fbb765104cbf613b89bef01cf4bad70"
+  digest = "1:447831205e1c85dbf1e6f97cb8ca54931452c6aff79c630ea091ecbbdc2e921e"
   name = "golang.org/x/net"
   packages = ["context"]
-  pruneopts = "UT"
-  revision = "da137c7871d730100384dbcf36e6f8fa493aef5b"
+  pruneopts = ""
+  revision = "a8b9294777976932365dabb6640cf1468d95c70f"
 
 [solve-meta]
   analyzer-name = "dep"
