@@ -216,7 +216,7 @@ func TestRemoveTags(t *testing.T) {
 						Indices []int
 						Text    string
 					}{
-						Indices: []int{23, 28},
+						Indices: []int{22, 27},
 						Text:    "シェル芸",
 					},
 				},
