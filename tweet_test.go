@@ -189,6 +189,40 @@ func TestRemoveTags(t *testing.T) {
 			},
 			tags: tags,
 		},
+		{
+			desc:   "同じタグが付与されている場合もすべて削除される",
+			expect: "echo test",
+			text:   "echo test #シェル芸 #シェル芸 #シェル芸",
+			entities: anaconda.Entities{
+				Hashtags: []struct {
+					Indices []int
+					Text    string
+				}{
+					struct {
+						Indices []int
+						Text    string
+					}{
+						Indices: []int{10, 15},
+						Text:    "シェル芸",
+					},
+					struct {
+						Indices []int
+						Text    string
+					}{
+						Indices: []int{16, 22},
+						Text:    "シェル芸",
+					},
+					struct {
+						Indices []int
+						Text    string
+					}{
+						Indices: []int{23, 28},
+						Text:    "シェル芸",
+					},
+				},
+			},
+			tags: tags,
+		},
 	}
 	for _, v := range testDatas {
 		got := removeTags(v.text, v.entities, v.tags)
