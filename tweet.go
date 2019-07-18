@@ -53,6 +53,9 @@ func ExtractShellgei(tweet anaconda.Tweet, self anaconda.User, api *anaconda.Twi
 	// get tweet text
 	text := tweet.FullText
 
+	// remove trigger tags (do this first to avoid range error)
+	text = removeTags(text, TweetEntitiesHashtags(tweet.Entities.Hashtags), TweetEntitiesHashtags(tweet.ExtendedEntities.Hashtags), tags)
+
 	// expand url
 	for _, url := range tweet.Entities.Urls {
 		if strings.HasPrefix(url.Expanded_url, "https://") {
@@ -61,6 +64,7 @@ func ExtractShellgei(tweet anaconda.Tweet, self anaconda.User, api *anaconda.Twi
 			text = strings.Replace(text, url.Url, url.Expanded_url[len("http://"):], -1)
 		}
 	}
+
 	// list of picture url
 	media_urls := make([]string, 0, 4)
 	for _, media := range tweet.ExtendedEntities.Media {
@@ -70,12 +74,11 @@ func ExtractShellgei(tweet anaconda.Tweet, self anaconda.User, api *anaconda.Twi
 		text = strings.Replace(text, media.Url, "", -1)
 	}
 
-	// treat
 	text = html.UnescapeString(text)
 	text = RemoveMentionSymbol(self, text)
 
 	// remove tags
-	shellgei := removeTags(text, TweetEntitiesHashtags(tweet.Entities.Hashtags), TweetEntitiesHashtags(tweet.ExtendedEntities.Hashtags), tags)
+	shellgei := text
 
 	if tweet.QuotedStatusID == 0 {
 		return shellgei, media_urls, nil
@@ -111,12 +114,9 @@ func removeTags(text string, hashtags, extHashtags TweetEntitiesHashtags, search
 					continue
 				}
 
-				// avoid panic
-				if tag.Indices[1] < len(rtext) {
-					// Set remove marks to tag range.
-					for i := tag.Indices[0]; i < tag.Indices[1]; i++ {
-						rtext[i] = removeMark
-					}
+				// Set remove marks to tag range.
+				for i := tag.Indices[0]; i < tag.Indices[1]; i++ {
+					rtext[i] = removeMark
 				}
 			}
 		}
