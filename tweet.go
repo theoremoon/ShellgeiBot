@@ -1,15 +1,17 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/ChimeraCoder/anaconda"
 	"html"
 	"io/ioutil"
 	"log"
 	"net/url"
 	"strings"
 	"unicode"
+
+	"github.com/ChimeraCoder/anaconda"
 )
 
 type TwitterKeys struct {
@@ -17,6 +19,13 @@ type TwitterKeys struct {
 	ConsumerSecret string `json:"ConsumerSecret"`
 	AccessToken    string `json:"AccessToken"`
 	AccessSecret   string `json:"AccessSecret"`
+}
+
+// Twitter.Entities.Hashtagsが無名構造体のため、該当構造体の初期化に手間がかかる
+// 。全く同じ構造体ではあるが、実装を容易にするため部分的に切り出して型を定義。
+type TweetEntitiesHashtags []struct {
+	Indices []int
+	Text    string
 }
 
 func ExtractShellgei(tweet anaconda.Tweet, self anaconda.User, api *anaconda.TwitterApi, tags []string) (string, []string, error) {
@@ -66,17 +75,7 @@ func ExtractShellgei(tweet anaconda.Tweet, self anaconda.User, api *anaconda.Twi
 	text = RemoveMentionSymbol(self, text)
 
 	// remove tags
-	rtext := []rune(text)
-	deletecount := 0
-	for _, tag := range tweet.Entities.Hashtags {
-		for _, t := range tags {
-			if tag.Text == t {
-				rtext = append(rtext[:tag.Indices[0]-deletecount], rtext[tag.Indices[1]-deletecount:]...)
-				deletecount += tag.Indices[1] - tag.Indices[0]
-			}
-		}
-	}
-	shellgei := strings.TrimSpace(string(rtext))
+	shellgei := removeTags(text, TweetEntitiesHashtags(tweet.Entities.Hashtags), TweetEntitiesHashtags(tweet.ExtendedEntities.Hashtags), tags)
 
 	if tweet.QuotedStatusID == 0 {
 		return shellgei, media_urls, nil
@@ -94,6 +93,39 @@ func ExtractShellgei(tweet anaconda.Tweet, self anaconda.User, api *anaconda.Twi
 		return "", nil, err
 	}
 	return quote_text + shellgei, append(quote_urls, media_urls...), nil
+}
+
+func removeTags(text string, hashtags, extHashtags TweetEntitiesHashtags, searchTags []string) string {
+	const removeMark = rune(0xFFFE)
+
+	rtext := []rune(text)
+	for _, tags := range []TweetEntitiesHashtags{hashtags, extHashtags} {
+		for _, tag := range tags {
+			for _, searchTag := range searchTags {
+				if tag.Text != searchTag {
+					continue
+				}
+
+				if len(tag.Indices) < 2 {
+					log.Printf("[WARN] tag indices < 2. text = %s, tag indices %v, tag = %v\n", text, tag.Indices, tag)
+					continue
+				}
+
+				// Set remove marks to tag range.
+				for i := tag.Indices[0]; i < tag.Indices[1]; i++ {
+					rtext[i] = removeMark
+				}
+			}
+		}
+	}
+
+	var b bytes.Buffer
+	for _, v := range rtext {
+		if v != removeMark {
+			b.WriteRune(v)
+		}
+	}
+	return strings.TrimSpace(b.String())
 }
 
 func ParseTwitterKey(file string) (TwitterKeys, error) {
@@ -160,7 +192,7 @@ func TweetResult(api *anaconda.TwitterApi, tweet anaconda.Tweet, result string, 
 func IsShellGeiTweet(tweet anaconda.Tweet, tags []string) bool {
 	for _, tag := range tweet.Entities.Hashtags {
 		for _, t := range tags {
-			if (t == tag.Text) {
+			if t == tag.Text {
 				return true
 			}
 		}
