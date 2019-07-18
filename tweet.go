@@ -75,7 +75,7 @@ func ExtractShellgei(tweet anaconda.Tweet, self anaconda.User, api *anaconda.Twi
 	text = RemoveMentionSymbol(self, text)
 
 	// remove tags
-	shellgei := removeTags(text, tweet.Entities.Hashtags, tweet.ExtendedEntities.Hashtags, tags)
+	shellgei := removeTags(text, TweetEntitiesHashtags(tweet.Entities.Hashtags), TweetEntitiesHashtags(tweet.ExtendedEntities.Hashtags), tags)
 
 	if tweet.QuotedStatusID == 0 {
 		return shellgei, media_urls, nil
