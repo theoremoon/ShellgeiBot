@@ -107,21 +107,18 @@ func removeTags(text string, hashtags, extHashtags TweetEntitiesHashtags, search
 				}
 
 				if len(tag.Indices) < 2 {
-					msg := fmt.Sprintf("[WARN] tag indices was until 2. text = %s, rtext = %s, tag indices length = %d, tag = %v", text, string(rtext), len(tag.Indices), tag)
-					log.Println(msg)
+					log.Printf("[WARN] tag indices < 2. text = %s, tag indices %v, tag = %v\n", text, tag.Indices, tag)
 					continue
 				}
 
-				tagStartPos := tag.Indices[0]
-				tagEndPos := tag.Indices[1]
-
 				// Set remove marks to tag range.
-				for i := tagStartPos; i < tagEndPos; i++ {
+				for i := tag.Indices[0]; i < tag.Indices[1]; i++ {
 					rtext[i] = removeMark
 				}
 			}
 		}
 	}
+
 	var b bytes.Buffer
 	for _, v := range rtext {
 		if v != removeMark {
