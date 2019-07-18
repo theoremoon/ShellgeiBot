@@ -96,7 +96,7 @@ func ExtractShellgei(tweet anaconda.Tweet, self anaconda.User, api *anaconda.Twi
 }
 
 func removeTags(text string, hashtags TweetEntitiesHashtags, tags []string) string {
-	const removeMark = rune(0)
+	const removeMark = rune(0xFFFE)
 
 	rtext := []rune(text)
 	for _, tag := range hashtags {
