@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"html"
@@ -95,8 +96,9 @@ func ExtractShellgei(tweet anaconda.Tweet, self anaconda.User, api *anaconda.Twi
 }
 
 func removeTags(text string, hashtags TweetEntitiesHashtags, tags []string) string {
+	const removeMark = rune(0)
+
 	rtext := []rune(text)
-	deletecount := 0
 	for _, tag := range hashtags {
 		for _, t := range tags {
 			if tag.Text == t {
@@ -109,30 +111,20 @@ func removeTags(text string, hashtags TweetEntitiesHashtags, tags []string) stri
 				tagStartPos := tag.Indices[0]
 				tagEndPos := tag.Indices[1]
 
-				headEndPos := tagStartPos - deletecount
-				tailStartPos := tagEndPos - deletecount
-
-				if len(rtext) < headEndPos {
-					msg := fmt.Sprintf("[WARN] head end position was over rtext length. text = %s, rtext = %s, head end position = %d, hashtags = %v, tag = %s", text, string(rtext), headEndPos, hashtags, t)
-					log.Println(msg)
-					continue
+				// Set remove marks to tag range.
+				for i := tagStartPos; i < tagEndPos; i++ {
+					rtext[i] = removeMark
 				}
-
-				if len(rtext) < tailStartPos {
-					msg := fmt.Sprintf("[WARN] tail start position was over rtext length. text = %s, rtext = %s, tail start position = %d, hashtags = %v, tag = %s", text, string(rtext), tailStartPos, hashtags, t)
-					log.Println(msg)
-					continue
-				}
-
-				textHead := rtext[:headEndPos]
-				textTail := rtext[tailStartPos:]
-
-				rtext = append(textHead, textTail...)
-				deletecount += tagEndPos - tagStartPos
 			}
 		}
 	}
-	return strings.TrimSpace(string(rtext))
+	var b bytes.Buffer
+	for _, v := range rtext {
+		if v != removeMark {
+			b.WriteRune(v)
+		}
+	}
+	return strings.TrimSpace(b.String())
 }
 
 func ParseTwitterKey(file string) (TwitterKeys, error) {
