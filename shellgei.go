@@ -168,7 +168,7 @@ func RunCmd(cmdstr string, media_urls []string, botConfig BotConfig) (string, []
 		"-v", imgdir_path+":/images",
 		"-v", mediadir_path+":/media",
 		botConfig.DockerImage,
-		"bash", "-c", fmt.Sprintf("chmod +x /%s && sync && ./%s", name, name))
+		"bash", "-c", fmt.Sprintf("chmod +x /%s && sync &&  ./%s | stdbuf -o0 head -c 100K", name, name))
 
 	// get result
 	var out bytes.Buffer
