@@ -75,7 +75,7 @@ func ExtractShellgei(tweet anaconda.Tweet, self anaconda.User, api *anaconda.Twi
 	text = RemoveMentionSymbol(self, text)
 
 	// remove tags
-	shellgei := removeTags(text, tweet.Entities.Hashtags, tags)
+	shellgei := removeTags(text, tweet.Entities.Hashtags, tweet.ExtendedEntities.Hashtags, tags)
 
 	if tweet.QuotedStatusID == 0 {
 		return shellgei, media_urls, nil
@@ -95,15 +95,19 @@ func ExtractShellgei(tweet anaconda.Tweet, self anaconda.User, api *anaconda.Twi
 	return quote_text + shellgei, append(quote_urls, media_urls...), nil
 }
 
-func removeTags(text string, hashtags TweetEntitiesHashtags, tags []string) string {
+func removeTags(text string, hashtags, extHashtags TweetEntitiesHashtags, searchTags []string) string {
 	const removeMark = rune(0xFFFE)
 
 	rtext := []rune(text)
-	for _, tag := range hashtags {
-		for _, t := range tags {
-			if tag.Text == t {
+	for _, tags := range []TweetEntitiesHashtags{hashtags, extHashtags} {
+		for _, tag := range tags {
+			for _, searchTag := range searchTags {
+				if tag.Text != searchTag {
+					continue
+				}
+
 				if len(tag.Indices) < 2 {
-					msg := fmt.Sprintf("[WARN] tag indices was until 2. text = %s, rtext = %s, tag indices length = %d, hashtags = %v, tag = %s", text, string(rtext), len(tag.Indices), hashtags, t)
+					msg := fmt.Sprintf("[WARN] tag indices was until 2. text = %s, rtext = %s, tag indices length = %d, tag = %v", text, string(rtext), len(tag.Indices), tag)
 					log.Println(msg)
 					continue
 				}

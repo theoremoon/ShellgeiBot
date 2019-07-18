@@ -52,11 +52,12 @@ func TestRemoveTags(t *testing.T) {
 		"危険シェル芸",
 	}
 	type TestData struct {
-		desc     string // テストの目的、理由
-		expect   string
-		text     string
-		hashtags TweetEntitiesHashtags
-		tags     []string
+		desc        string // テストの目的、理由
+		expect      string
+		text        string
+		hashtags    TweetEntitiesHashtags
+		extHashtags TweetEntitiesHashtags // Empty
+		tags        []string
 	}
 	testDatas := []TestData{
 		{
@@ -115,7 +116,7 @@ func TestRemoveTags(t *testing.T) {
 		},
 	}
 	for _, v := range testDatas {
-		got := removeTags(v.text, v.hashtags, v.tags)
+		got := removeTags(v.text, v.hashtags, v.extHashtags, v.tags)
 		assert.Equal(t, v.expect, got, v.desc)
 	}
 }
