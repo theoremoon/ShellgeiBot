@@ -20,6 +20,13 @@ type TwitterKeys struct {
 	AccessSecret   string `json:"AccessSecret"`
 }
 
+// Twitter.Entities.Hashtagsが無名構造体のため、該当構造体の初期化に手間がかかる
+// 。全く同じ構造体ではあるが、実装を容易にするため部分的に切り出して型を定義。
+type TweetEntitiesHashtags []struct {
+	Indices []int
+	Text    string
+}
+
 func ExtractShellgei(tweet anaconda.Tweet, self anaconda.User, api *anaconda.TwitterApi, tags []string) (string, []string, error) {
 	// self recursion
 	if tweet.QuotedStatusID == tweet.Id {
@@ -67,7 +74,7 @@ func ExtractShellgei(tweet anaconda.Tweet, self anaconda.User, api *anaconda.Twi
 	text = RemoveMentionSymbol(self, text)
 
 	// remove tags
-	shellgei := removeTags(text, tweet.Entities, tags)
+	shellgei := removeTags(text, tweet.Entities.Hashtags, tags)
 
 	if tweet.QuotedStatusID == 0 {
 		return shellgei, media_urls, nil
@@ -87,14 +94,41 @@ func ExtractShellgei(tweet anaconda.Tweet, self anaconda.User, api *anaconda.Twi
 	return quote_text + shellgei, append(quote_urls, media_urls...), nil
 }
 
-func removeTags(text string, entities anaconda.Entities, tags []string) string {
+func removeTags(text string, hashtags TweetEntitiesHashtags, tags []string) string {
 	rtext := []rune(text)
 	deletecount := 0
-	for _, tag := range entities.Hashtags {
+	for _, tag := range hashtags {
 		for _, t := range tags {
 			if tag.Text == t {
-				rtext = append(rtext[:tag.Indices[0]-deletecount], rtext[tag.Indices[1]-deletecount:]...)
-				deletecount += tag.Indices[1] - tag.Indices[0]
+				if len(tag.Indices) < 2 {
+					msg := fmt.Sprintf("[WARN] tag indices was until 2. text = %s, rtext = %s, tag indices length = %d, hashtags = %v, tag = %s", text, string(rtext), len(tag.Indices), hashtags, t)
+					log.Println(msg)
+					continue
+				}
+
+				tagStartPos := tag.Indices[0]
+				tagEndPos := tag.Indices[1]
+
+				headEndPos := tagStartPos - deletecount
+				tailStartPos := tagEndPos - deletecount
+
+				if len(rtext) < headEndPos {
+					msg := fmt.Sprintf("[WARN] head end position was over rtext length. text = %s, rtext = %s, head end position = %d, hashtags = %v, tag = %s", text, string(rtext), headEndPos, hashtags, t)
+					log.Println(msg)
+					continue
+				}
+
+				if len(rtext) < tailStartPos {
+					msg := fmt.Sprintf("[WARN] tail start position was over rtext length. text = %s, rtext = %s, tail start position = %d, hashtags = %v, tag = %s", text, string(rtext), tailStartPos, hashtags, t)
+					log.Println(msg)
+					continue
+				}
+
+				textHead := rtext[:headEndPos]
+				textTail := rtext[tailStartPos:]
+
+				rtext = append(textHead, textTail...)
+				deletecount += tagEndPos - tagStartPos
 			}
 		}
 	}
