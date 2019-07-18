@@ -111,9 +111,12 @@ func removeTags(text string, hashtags, extHashtags TweetEntitiesHashtags, search
 					continue
 				}
 
-				// Set remove marks to tag range.
-				for i := tag.Indices[0]; i < tag.Indices[1]; i++ {
-					rtext[i] = removeMark
+				// avoid panic
+				if tag.Indices[1] < len(rtext) {
+					// Set remove marks to tag range.
+					for i := tag.Indices[0]; i < tag.Indices[1]; i++ {
+						rtext[i] = removeMark
+					}
 				}
 			}
 		}
