@@ -1,5 +1,7 @@
 # ShellGeiBot
 
+[![Go Report Card](https://goreportcard.com/badge/github.com/theoldmoon0602/ShellgeiBot)](https://goreportcard.com/report/github.com/theoldmoon0602/ShellgeiBot)
+
 ## Twitter
 
 - [@minyoruminyon](https://twitter.com/minyoruminyon)
@@ -20,5 +22,4 @@ theoldmooon0602
 ## LICENSE
 
 Apache License
-
 

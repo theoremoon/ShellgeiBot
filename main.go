@@ -7,9 +7,6 @@ import (
 	"database/sql"
 	"encoding/base64"
 	"fmt"
-	"github.com/ChimeraCoder/anaconda"
-	"github.com/mattn/go-sixel"
-	_ "github.com/mattn/go-sqlite3"
 	"image"
 	_ "image/gif"
 	_ "image/jpeg"
@@ -19,20 +16,24 @@ import (
 	"net/url"
 	"os"
 	"strings"
+
+	"github.com/ChimeraCoder/anaconda"
+	"github.com/mattn/go-sixel"
+	_ "github.com/mattn/go-sqlite3"
 )
 
-func ProcessTweet(tweet anaconda.Tweet, self anaconda.User, api *anaconda.TwitterApi, db *sql.DB, botConfig BotConfig) {
+func processTweet(tweet anaconda.Tweet, self anaconda.User, api *anaconda.TwitterApi, db *sql.DB, config botConfig) {
 	// check if it is valid shellgei tweet
 	if tweet.RetweetedStatus != nil {
 		return
 	}
-	if !IsShellGeiTweet(tweet, botConfig.Tags) {
+	if !isShellGeiTweet(tweet, config.Tags) {
 		return
 	}
 	if self.Id == tweet.User.Id {
 		return
 	}
-	if !IsFollower(api, tweet) {
+	if !isFollower(api, tweet) {
 		return
 	}
 
@@ -41,20 +42,20 @@ func ProcessTweet(tweet anaconda.Tweet, self anaconda.User, api *anaconda.Twitte
 		log.Println(err)
 		return
 	}
-	text, media_urls, err := ExtractShellgei(tweet, self, api, botConfig.Tags)
+	text, mediaUrls, err := extractShellgei(tweet, self, api, config.Tags)
 	if err != nil {
 		log.Println(err)
 		return
 	}
 
-	InsertShellGei(db, tweet.User.Id, tweet.User.ScreenName, tweet.Id, text, t.Unix())
+	insertShellGei(db, tweet.User.Id, tweet.User.ScreenName, tweet.Id, text, t.Unix())
 
-	result, b64imgs, err := RunCmd(text, media_urls, botConfig)
-	result = MakeTweetable(result)
-	InsertResult(db, tweet.Id, result, err)
+	result, b64imgs, err := runCmd(text, mediaUrls, config)
+	result = makeTweetable(result)
+	insertResult(db, tweet.Id, result, err)
 
 	if err != nil {
-		if err.(*StdError) == nil {
+		if err.(*stdError) == nil {
 			_, _ = api.PostTweet("@theoldmoon0602 internal error", url.Values{})
 		}
 		return
@@ -64,7 +65,7 @@ func ProcessTweet(tweet anaconda.Tweet, self anaconda.User, api *anaconda.Twitte
 		return
 	}
 
-	err = TweetResult(api, tweet, result, b64imgs)
+	err = tweetResult(api, tweet, result, b64imgs)
 	if err != nil {
 		log.Println(err)
 	}
@@ -73,7 +74,7 @@ func ProcessTweet(tweet anaconda.Tweet, self anaconda.User, api *anaconda.Twitte
 
 /// ShellgeiBot main function
 func botMain(twitterConfigFile, botConfigFile string) {
-	twitterKey, err := ParseTwitterKey(twitterConfigFile)
+	twitterKey, err := parseTwitterKey(twitterConfigFile)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -82,7 +83,7 @@ func botMain(twitterConfigFile, botConfigFile string) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	_, _ = db.Exec(Schema)
+	_, _ = db.Exec(schema)
 
 	anaconda.SetConsumerKey(twitterKey.ConsumerKey)
 	anaconda.SetConsumerSecret(twitterKey.ConsumerSecret)
@@ -94,32 +95,32 @@ func botMain(twitterConfigFile, botConfigFile string) {
 		log.Fatal(err)
 	}
 
-	botConfig, err := ParseBotConfig(botConfigFile)
+	config, err := parseBotConfig(botConfigFile)
 	if err != nil {
 		log.Fatal(err)
 	}
-	v.Set("track", strings.Join(botConfig.Tags, ","))
+	v.Set("track", strings.Join(config.Tags, ","))
 	stream := api.PublicStreamFilter(v)
 
 	for {
 		t := <-stream.C
 		switch tweet := t.(type) {
 		case anaconda.Tweet:
-			botConfig, err = ParseBotConfig(botConfigFile)
+			config, err = parseBotConfig(botConfigFile)
 			if err != nil {
 				_, _ = api.PostTweet("@theoldmoon0602 Internal error", v)
 				log.Fatal(err)
 			}
 
 			go func() {
-				ProcessTweet(tweet, self, api, db, botConfig)
+				processTweet(tweet, self, api, db, config)
 			}()
 		}
 	}
 }
 
 func botTest(botConfigFile, scriptFile string) {
-	botConfig, err := ParseBotConfig(botConfigFile)
+	config, err := parseBotConfig(botConfigFile)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -129,11 +130,11 @@ func botTest(botConfigFile, scriptFile string) {
 		log.Fatal(err)
 	}
 
-	result, b64imgs, err := RunCmd(string(script), []string{}, botConfig)
-	result = MakeTweetable(result)
+	result, b64imgs, err := runCmd(string(script), []string{}, config)
+	result = makeTweetable(result)
 
 	if err != nil {
-		if err.(*StdError) == nil {
+		if err.(*stdError) == nil {
 			log.Fatal("internal Error")
 		}
 		return

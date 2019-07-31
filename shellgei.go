@@ -18,7 +18,7 @@ import (
 	"time"
 )
 
-type BotConfigJson struct {
+type botConfigJSON struct {
 	DockerImage string   `json:"dockerimage"`
 	Workdir     string   `json:"workdir"`
 	Memory      string   `json:"memory"`
@@ -27,7 +27,7 @@ type BotConfigJson struct {
 	Tags        []string `json:"tags"`
 }
 
-type BotConfig struct {
+type botConfig struct {
 	DockerImage string
 	Workdir     string
 	Memory      string
@@ -36,9 +36,9 @@ type BotConfig struct {
 	Tags        []string
 }
 
-func ParseBotConfig(file string) (BotConfig, error) {
-	var c BotConfigJson
-	var config BotConfig
+func parseBotConfig(file string) (botConfig, error) {
+	var c botConfigJSON
+	var config botConfig
 
 	// read json
 	raw, err := ioutil.ReadFile(file)
@@ -66,7 +66,7 @@ func ParseBotConfig(file string) (BotConfig, error) {
 	return config, nil
 }
 
-func RandStr(length int) (string, error) {
+func randStr(length int) (string, error) {
 	const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 	randstr := make([]byte, 0, length)
 	keys := make([]byte, length)
@@ -82,10 +82,10 @@ func RandStr(length int) (string, error) {
 	return string(randstr), nil
 }
 
-// https://golangcode.com/download-a-file-from-a-url/
-// DownloadFile will download a url to a local file. It's efficient because it will
+// downloadFile will download a url to a local file. It's efficient because it will
 // write as it downloads and not load the whole file into memory.
-func DownloadFile(filepath string, url string) error {
+// https://golangcode.com/download-a-file-from-a-url/
+func downloadFile(filepath string, url string) error {
 
 	// Get the data
 	resp, err := http.Get(url)
@@ -106,21 +106,21 @@ func DownloadFile(filepath string, url string) error {
 	return err
 }
 
-type StdError struct {
+type stdError struct {
 	Msg string
 }
 
-func (e *StdError) Error() string {
+func (e *stdError) Error() string {
 	return e.Msg
 }
 
-func RunCmd(cmdstr string, media_urls []string, botConfig BotConfig) (string, []string, error) {
+func runCmd(cmdstr string, mediaUrls []string, config botConfig) (string, []string, error) {
 	// create shellgei script file and write shellgei content
-	name, err := RandStr(16)
+	name, err := randStr(16)
 	if err != nil {
 		return "", []string{}, err
 	}
-	path := filepath.Join(botConfig.Workdir, name)
+	path := filepath.Join(config.Workdir, name)
 	file, err := os.Create(path)
 	if err != nil {
 		return "", []string{}, fmt.Errorf("error: %v, directory permission denied?", err)
@@ -133,24 +133,24 @@ func RunCmd(cmdstr string, media_urls []string, botConfig BotConfig) (string, []
 	file.Close()
 
 	// create images directory
-	imgdir_path := filepath.Join(botConfig.Workdir, name+"__images")
-	err = os.MkdirAll(imgdir_path, 0777)
+	imgdirPath := filepath.Join(config.Workdir, name+"__images")
+	err = os.MkdirAll(imgdirPath, 0777)
 	if err != nil {
 		return "", []string{}, fmt.Errorf("error: %v, could not create directory", err)
 	}
-	defer func() { _ = os.RemoveAll(imgdir_path) }()
+	defer func() { _ = os.RemoveAll(imgdirPath) }()
 
 	// create media directory
-	mediadir_path := filepath.Join(botConfig.Workdir, name+"__media")
-	err = os.MkdirAll(mediadir_path, 0777)
+	mediadirPath := filepath.Join(config.Workdir, name+"__media")
+	err = os.MkdirAll(mediadirPath, 0777)
 	if err != nil {
 		return "", []string{}, fmt.Errorf("error: %v, could not create directory", err)
 	}
-	defer func() { _ = os.RemoveAll(mediadir_path) }()
+	defer func() { _ = os.RemoveAll(mediadirPath) }()
 
 	// download medias
-	for i, url := range media_urls {
-		err = DownloadFile(filepath.Join(mediadir_path, strconv.Itoa(i)), url)
+	for i, url := range mediaUrls {
+		err = downloadFile(filepath.Join(mediadirPath, strconv.Itoa(i)), url)
 		if err != nil {
 			return "", nil, fmt.Errorf("error: %v, failed to download a media", err)
 		}
@@ -159,14 +159,14 @@ func RunCmd(cmdstr string, media_urls []string, botConfig BotConfig) (string, []
 	// execute shellgei in the docker
 	cmd := exec.Command("docker", "run", "--rm",
 		"--net=none",
-		"-m", botConfig.Memory,
+		"-m", config.Memory,
 		"--oom-kill-disable",
 		"--pids-limit", "1024",
 		"--name", name,
 		"-v", path+":/"+name,
-		"-v", imgdir_path+":/images",
-		"-v", mediadir_path+":/media",
-		botConfig.DockerImage,
+		"-v", imgdirPath+":/images",
+		"-v", mediadirPath+":/media",
+		config.DockerImage,
 		"bash", "-c", fmt.Sprintf("chmod +x /%s && sync &&  ./%s | stdbuf -o0 head -c 100K", name, name))
 
 	// get result
@@ -176,7 +176,7 @@ func RunCmd(cmdstr string, media_urls []string, botConfig BotConfig) (string, []
 	cmd.Stderr = &stderr
 
 	ctx := context.Background()
-	ctx, cancel := context.WithTimeout(ctx, botConfig.Timeout)
+	ctx, cancel := context.WithTimeout(ctx, config.Timeout)
 	defer cancel()
 
 	errChan := make(chan error, 1)
@@ -189,12 +189,12 @@ func RunCmd(cmdstr string, media_urls []string, botConfig BotConfig) (string, []
 		// kill send SIGKILL immediately
 		// though stop send SIGKILL after sending SIGTERM
 		_ = exec.Command("docker", "kill", name).Run()
-	case err = <-errChan:
+	case <-errChan:
 		// do nothing
 	}
 
 	// search image data
-	files, err := ioutil.ReadDir(imgdir_path)
+	files, err := ioutil.ReadDir(imgdirPath)
 
 	// without image
 	if err != nil || len(files) == 0 {
@@ -209,7 +209,7 @@ func RunCmd(cmdstr string, media_urls []string, botConfig BotConfig) (string, []
 		if len(files) <= i {
 			break
 		}
-		path := filepath.Join(imgdir_path, files[i].Name())
+		path := filepath.Join(imgdirPath, files[i].Name())
 
 		// do not follow the symlink
 		lfinfo, err := os.Lstat(path)
@@ -219,7 +219,7 @@ func RunCmd(cmdstr string, media_urls []string, botConfig BotConfig) (string, []
 
 		// if file size is zero or bigger than MediaSize[MB]
 		finfo, err := os.Stat(path)
-		if err != nil || finfo.Size() == 0 || finfo.Size() >= 1024*1024*botConfig.MediaSize {
+		if err != nil || finfo.Size() == 0 || finfo.Size() >= 1024*1024*config.MediaSize {
 			continue
 		}
 
@@ -233,7 +233,7 @@ func RunCmd(cmdstr string, media_urls []string, botConfig BotConfig) (string, []
 		// encode to base64
 		b64img := base64.StdEncoding.EncodeToString(img)
 		b64imgs = append(b64imgs, b64img)
-		readcount += 1
+		readcount++
 	}
 	return out.String(), b64imgs, nil
 }
