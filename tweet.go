@@ -14,21 +14,22 @@ import (
 	"github.com/ChimeraCoder/anaconda"
 )
 
-type TwitterKeys struct {
+type twitterKeys struct {
 	ConsumerKey    string `json:"ConsumerKey"`
 	ConsumerSecret string `json:"ConsumerSecret"`
 	AccessToken    string `json:"AccessToken"`
 	AccessSecret   string `json:"AccessSecret"`
 }
 
-// Twitter.Entities.Hashtagsが無名構造体のため、該当構造体の初期化に手間がかかる
-// 。全く同じ構造体ではあるが、実装を容易にするため部分的に切り出して型を定義。
-type TweetEntitiesHashtags []struct {
+// tweetEntitiesHashtags Twitter.Entities.Hashtagsが無名構造体のため、該当構造
+// 体の初期化に手間がかかる。全く同じ構造体ではあるが、実装を容易にするため部
+// 分的に切り出して型を定義。
+type tweetEntitiesHashtags []struct {
 	Indices []int
 	Text    string
 }
 
-func ExtractShellgei(tweet anaconda.Tweet, self anaconda.User, api *anaconda.TwitterApi, tags []string) (string, []string, error) {
+func extractShellgei(tweet anaconda.Tweet, self anaconda.User, api *anaconda.TwitterApi, tags []string) (string, []string, error) {
 	// self recursion
 	if tweet.QuotedStatusID == tweet.Id {
 		return "", nil, fmt.Errorf("self recursion")
@@ -47,14 +48,14 @@ func ExtractShellgei(tweet anaconda.Tweet, self anaconda.User, api *anaconda.Twi
 		if err != nil {
 			return "", nil, err
 		}
-		return ExtractShellgei(quoted, self, api, tags)
+		return extractShellgei(quoted, self, api, tags)
 	}
 
 	// get tweet text
 	text := tweet.FullText
 
 	// remove trigger tags (do this first to avoid range error)
-	text = removeTags(text, TweetEntitiesHashtags(tweet.Entities.Hashtags), TweetEntitiesHashtags(tweet.ExtendedEntities.Hashtags), tags)
+	text = removeTags(text, tweetEntitiesHashtags(tweet.Entities.Hashtags), tweetEntitiesHashtags(tweet.ExtendedEntities.Hashtags), tags)
 
 	// expand url
 	for _, url := range tweet.Entities.Urls {
@@ -66,22 +67,22 @@ func ExtractShellgei(tweet anaconda.Tweet, self anaconda.User, api *anaconda.Twi
 	}
 
 	// list of picture url
-	media_urls := make([]string, 0, 4)
+	mediaUrls := make([]string, 0, 4)
 	for _, media := range tweet.ExtendedEntities.Media {
-		media_urls = append(media_urls, media.Media_url_https)
+		mediaUrls = append(mediaUrls, media.Media_url_https)
 
 		// remove media url
 		text = strings.Replace(text, media.Url, "", -1)
 	}
 
 	text = html.UnescapeString(text)
-	text = RemoveMentionSymbol(self, text)
+	text = removeMentionSymbol(self, text)
 
 	// remove tags
 	shellgei := text
 
 	if tweet.QuotedStatusID == 0 {
-		return shellgei, media_urls, nil
+		return shellgei, mediaUrls, nil
 	}
 
 	// tweet chain
@@ -91,18 +92,18 @@ func ExtractShellgei(tweet anaconda.Tweet, self anaconda.User, api *anaconda.Twi
 		return "", nil, err
 	}
 
-	quote_text, quote_urls, err := ExtractShellgei(quoted, self, api, tags)
+	quoteText, quoteUrls, err := extractShellgei(quoted, self, api, tags)
 	if err != nil {
 		return "", nil, err
 	}
-	return quote_text + shellgei, append(quote_urls, media_urls...), nil
+	return quoteText + shellgei, append(quoteUrls, mediaUrls...), nil
 }
 
-func removeTags(text string, hashtags, extHashtags TweetEntitiesHashtags, searchTags []string) string {
+func removeTags(text string, hashtags, extHashtags tweetEntitiesHashtags, searchTags []string) string {
 	const removeMark = rune(0xFFFE)
 
 	rtext := []rune(text)
-	for _, tags := range []TweetEntitiesHashtags{hashtags, extHashtags} {
+	for _, tags := range []tweetEntitiesHashtags{hashtags, extHashtags} {
 		for _, tag := range tags {
 			for _, searchTag := range searchTags {
 				if tag.Text != searchTag {
@@ -131,8 +132,8 @@ func removeTags(text string, hashtags, extHashtags TweetEntitiesHashtags, search
 	return strings.TrimSpace(b.String())
 }
 
-func ParseTwitterKey(file string) (TwitterKeys, error) {
-	var k TwitterKeys
+func parseTwitterKey(file string) (twitterKeys, error) {
+	var k twitterKeys
 	raw, err := ioutil.ReadFile(file)
 	if err != nil {
 		return k, err
@@ -144,7 +145,7 @@ func ParseTwitterKey(file string) (TwitterKeys, error) {
 	return k, nil
 }
 
-func MakeTweetable(text string) string {
+func makeTweetable(text string) string {
 	a := []rune(text)
 	i := 0
 	l := 0
@@ -161,13 +162,13 @@ func MakeTweetable(text string) string {
 	return string(a[:i])
 }
 
-func TweetUrl(tweet anaconda.Tweet) string {
+func tweetURL(tweet anaconda.Tweet) string {
 	return "https://twitter.com/" + tweet.User.ScreenName + "/status/" + tweet.IdStr
 }
 
-func TweetResult(api *anaconda.TwitterApi, tweet anaconda.Tweet, result string, b64imgs []string) error {
+func tweetResult(api *anaconda.TwitterApi, tweet anaconda.Tweet, result string, b64imgs []string) error {
 	v := url.Values{}
-	media_ids := make([]string, 0, 4)
+	mediaIds := make([]string, 0, 4)
 
 	// with image
 	for _, b64img := range b64imgs {
@@ -175,16 +176,16 @@ func TweetResult(api *anaconda.TwitterApi, tweet anaconda.Tweet, result string, 
 		if err != nil {
 			log.Println(err)
 		} else {
-			media_ids = append(media_ids, media.MediaIDString)
+			mediaIds = append(mediaIds, media.MediaIDString)
 		}
 	}
-	v.Add("media_ids", strings.Join(media_ids, ","))
+	v.Add("media_ids", strings.Join(mediaIds, ","))
 
 	if len(b64imgs) == 0 {
 		v.Set("tweet_mode", "extended")
-		v.Set("attachment_url", TweetUrl(tweet))
+		v.Set("attachment_url", tweetURL(tweet))
 	} else {
-		result = result + " " + TweetUrl(tweet)
+		result = result + " " + tweetURL(tweet)
 	}
 
 	// post message
@@ -192,7 +193,7 @@ func TweetResult(api *anaconda.TwitterApi, tweet anaconda.Tweet, result string, 
 	return err
 }
 
-func IsShellGeiTweet(tweet anaconda.Tweet, tags []string) bool {
+func isShellGeiTweet(tweet anaconda.Tweet, tags []string) bool {
 	for _, tag := range tweet.Entities.Hashtags {
 		for _, t := range tags {
 			if t == tag.Text {
@@ -203,11 +204,11 @@ func IsShellGeiTweet(tweet anaconda.Tweet, tags []string) bool {
 	return false
 }
 
-func RemoveMentionSymbol(self anaconda.User, tweet string) string {
+func removeMentionSymbol(self anaconda.User, tweet string) string {
 	return strings.Replace(tweet, "@"+self.ScreenName, "", -1)
 }
 
-func IsFollower(api *anaconda.TwitterApi, tweet anaconda.Tweet) bool {
+func isFollower(api *anaconda.TwitterApi, tweet anaconda.Tweet) bool {
 	v := url.Values{}
 	u, err := api.GetUsersShowById(tweet.User.Id, v)
 	if err != nil {

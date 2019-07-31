@@ -2,10 +2,11 @@ package main
 
 import (
 	"database/sql"
+
 	_ "github.com/mattn/go-sqlite3"
 )
 
-const Schema = `
+const schema = `
 create table if not exists shellgeis (
   user_id integer,
   screen_name text,
@@ -17,17 +18,17 @@ create table if not exists shellgeis (
 );
 `
 
-func InsertResult(db *sql.DB, tweet_id int64, result string, err error) error {
-	err_str := ""
+func insertResult(db *sql.DB, tweetID int64, result string, err error) error {
+	errStr := ""
 	if err != nil {
-		err_str = err.Error()
+		errStr = err.Error()
 	}
-	_, err2 := db.Exec("update shellgeis set result=?, error=? where tweet_id=?", result, err_str, tweet_id)
+	_, err2 := db.Exec("update shellgeis set result=?, error=? where tweet_id=?", result, errStr, tweetID)
 	return err2
 }
 
-func InsertShellGei(db *sql.DB, user_id int64, screen_name string, tweet_id int64, shellgei string, timestamp int64) error {
-	_, err := db.Exec("insert into shellgeis(user_id, screen_name, tweet_id, shellgei, timestamp) values (?,?,?,?,?)", user_id, screen_name, tweet_id, shellgei, timestamp)
+func insertShellGei(db *sql.DB, userID int64, screenName string, tweetID int64, shellgei string, timestamp int64) error {
+	_, err := db.Exec("insert into shellgeis(user_id, screen_name, tweet_id, shellgei, timestamp) values (?,?,?,?,?)", userID, screenName, tweetID, shellgei, timestamp)
 	if err != nil {
 		return err
 	}
