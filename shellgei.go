@@ -162,7 +162,6 @@ func RunCmd(cmdstr string, media_urls []string, botConfig BotConfig) (string, []
 		"-m", botConfig.Memory,
 		"--oom-kill-disable",
 		"--pids-limit", "1024",
-		"--cap-add", "sys_ptrace",
 		"--name", name,
 		"-v", path+":/"+name,
 		"-v", imgdir_path+":/images",
