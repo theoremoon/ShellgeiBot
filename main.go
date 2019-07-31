@@ -42,7 +42,7 @@ func processTweet(tweet anaconda.Tweet, self anaconda.User, api *anaconda.Twitte
 		log.Println(err)
 		return
 	}
-	text, mediaUrls, err := extractShellgei(tweet, self, api, config.Tags)
+	text, mediaUrls, err := extractShellgei(tweet, self, api, config.Tags,0)
 	if err != nil {
 		log.Println(err)
 		return
