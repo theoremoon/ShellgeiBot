@@ -29,15 +29,17 @@ type tweetEntitiesHashtags []struct {
 	Text    string
 }
 
-func extractShellgei(tweet anaconda.Tweet, self anaconda.User, api *anaconda.TwitterApi, tags []string,recursion int) (string, []string, error) {
+func extractShellgei(tweet anaconda.Tweet, self anaconda.User, api *anaconda.TwitterApi, tags []string, checked []int64) (string, []string, error) {
 	// self recursion
 	if tweet.QuotedStatusID == tweet.Id {
 		return "", nil, fmt.Errorf("self recursion")
 	}
 
-	//Too many recursion
-	if recursion >= 5{
-		return "", nil, fmt.Errorf("too many recursion")
+	//Recursion Detected
+	for _, v := range checked {
+		if tweet.QuotedStatusID == v {
+			return "", nil, fmt.Errorf("recursion detected")
+		}
 	}
 
 	// if it is quoted tweet of shellgeibot's tweet
@@ -53,7 +55,7 @@ func extractShellgei(tweet anaconda.Tweet, self anaconda.User, api *anaconda.Twi
 		if err != nil {
 			return "", nil, err
 		}
-		return extractShellgei(quoted, self, api, tags,recursion+1)
+		return extractShellgei(quoted, self, api, tags,append(checked,tweet.QuotedStatusID))
 	}
 
 	// get tweet text
@@ -97,7 +99,7 @@ func extractShellgei(tweet anaconda.Tweet, self anaconda.User, api *anaconda.Twi
 		return "", nil, err
 	}
 
-	quoteText, quoteUrls, err := extractShellgei(quoted, self, api, tags,recursion+1)
+	quoteText, quoteUrls, err := extractShellgei(quoted, self, api, tags,append(checked,tweet.QuotedStatusID))
 	if err != nil {
 		return "", nil, err
 	}
