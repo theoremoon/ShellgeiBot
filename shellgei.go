@@ -22,7 +22,7 @@ type BotConfigJson struct {
 	DockerImage string   `json:"dockerimage"`
 	Workdir     string   `json:"workdir"`
 	Memory      string   `json:"memory"`
-	MediaSize      int64   `json:"mediasize"`
+	MediaSize   int64    `json:"mediasize"`
 	Timeout     string   `json:"timeout"`
 	Tags        []string `json:"tags"`
 }
@@ -31,7 +31,7 @@ type BotConfig struct {
 	DockerImage string
 	Workdir     string
 	Memory      string
-	MediaSize      int64
+	MediaSize   int64
 	Timeout     time.Duration
 	Tags        []string
 }
@@ -123,12 +123,12 @@ func RunCmd(cmdstr string, media_urls []string, botConfig BotConfig) (string, []
 	path := filepath.Join(botConfig.Workdir, name)
 	file, err := os.Create(path)
 	if err != nil {
-		return "", []string{}, fmt.Errorf("error: %s, directory permission denied?", err)
+		return "", []string{}, fmt.Errorf("error: %v, directory permission denied?", err)
 	}
 	defer func() { _ = os.RemoveAll(path) }()
 	_, err = file.WriteString(cmdstr)
 	if err != nil {
-		return "", []string{}, fmt.Errorf("errors: %s, failed to write", err)
+		return "", []string{}, fmt.Errorf("errors: %v, failed to write", err)
 	}
 	file.Close()
 
@@ -136,7 +136,7 @@ func RunCmd(cmdstr string, media_urls []string, botConfig BotConfig) (string, []
 	imgdir_path := filepath.Join(botConfig.Workdir, name+"__images")
 	err = os.MkdirAll(imgdir_path, 0777)
 	if err != nil {
-		return "", []string{}, fmt.Errorf("error: %s, could not create directory", err)
+		return "", []string{}, fmt.Errorf("error: %v, could not create directory", err)
 	}
 	defer func() { _ = os.RemoveAll(imgdir_path) }()
 
@@ -144,7 +144,7 @@ func RunCmd(cmdstr string, media_urls []string, botConfig BotConfig) (string, []
 	mediadir_path := filepath.Join(botConfig.Workdir, name+"__media")
 	err = os.MkdirAll(mediadir_path, 0777)
 	if err != nil {
-		return "", []string{}, fmt.Errorf("error: %s, could not create directory", err)
+		return "", []string{}, fmt.Errorf("error: %v, could not create directory", err)
 	}
 	defer func() { _ = os.RemoveAll(mediadir_path) }()
 
@@ -152,7 +152,7 @@ func RunCmd(cmdstr string, media_urls []string, botConfig BotConfig) (string, []
 	for i, url := range media_urls {
 		err = DownloadFile(filepath.Join(mediadir_path, strconv.Itoa(i)), url)
 		if err != nil {
-			return "", nil, fmt.Errorf("error: %s, failed to download a media", err)
+			return "", nil, fmt.Errorf("error: %v, failed to download a media", err)
 		}
 	}
 
@@ -213,13 +213,13 @@ func RunCmd(cmdstr string, media_urls []string, botConfig BotConfig) (string, []
 
 		// do not follow the symlink
 		lfinfo, err := os.Lstat(path)
-		if err != nil || lfinfo.Mode() & os.ModeSymlink != 0 {
+		if err != nil || lfinfo.Mode()&os.ModeSymlink != 0 {
 			continue
 		}
 
 		// if file size is zero or bigger than MediaSize[MB]
 		finfo, err := os.Stat(path)
-		if err != nil || finfo.Size() == 0 || finfo.Size() >= 1024 * 1024 * botConfig.MediaSize {
+		if err != nil || finfo.Size() == 0 || finfo.Size() >= 1024*1024*botConfig.MediaSize {
 			continue
 		}
 
