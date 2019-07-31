@@ -189,7 +189,7 @@ func runCmd(cmdstr string, mediaUrls []string, config botConfig) (string, []stri
 		// kill send SIGKILL immediately
 		// though stop send SIGKILL after sending SIGTERM
 		_ = exec.Command("docker", "kill", name).Run()
-	case err = <-errChan:
+	case <-errChan:
 		// do nothing
 	}
 
