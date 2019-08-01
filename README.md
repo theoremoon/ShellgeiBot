@@ -15,6 +15,10 @@
 - DockerHub: https://hub.docker.com/r/theoldmoon0602/shellgeibot
 - GitHub: https://github.com/theoldmoon0602/ShellgeiBot-Image
 
+## 3rd parties
+
+- SGWeb (https://shellgei-web.net) by [@kekeho](https://github.com/kekeho): https://github.com/kekeho/SGWeb
+
 ## Author
 
 theoldmooon0602
