@@ -132,13 +132,12 @@ func runCmd(cmdstr string, mediaUrls []string, config botConfig) (string, []stri
 	}
 	file.Close()
 
-	// create images directory
-	imgdirPath := filepath.Join(config.Workdir, name+"__images")
-	err = os.MkdirAll(imgdirPath, 0777)
-	if err != nil {
-		return "", []string{}, fmt.Errorf("error: %v, could not create directory", err)
-	}
-	defer func() { _ = os.RemoveAll(imgdirPath) }()
+	// use images volume intead of directory
+	// c.f. https://github.com/theoldmoon0602/ShellgeiBot/issues/41
+	imagesVolume := name+"__volume"
+	defer func() {
+		_ = exec.Command("docker", "volume", "rm", imagesVolume).Run()
+	}()
 
 	// create media directory
 	mediadirPath := filepath.Join(config.Workdir, name+"__media")
@@ -164,8 +163,8 @@ func runCmd(cmdstr string, mediaUrls []string, config botConfig) (string, []stri
 		"--pids-limit", "1024",
 		"--name", name,
 		"-v", path+":/"+name,
-		"-v", imgdirPath+":/images",
-		"-v", mediadirPath+":/media",
+		"-v", imagesVolume+":/images",
+		"-v", mediadirPath+":/media:ro",
 		config.DockerImage,
 		"bash", "-c", fmt.Sprintf("chmod +x /%s && sync &&  ./%s | stdbuf -o0 head -c 100K", name, name))
 
@@ -192,6 +191,17 @@ func runCmd(cmdstr string, mediaUrls []string, config botConfig) (string, []stri
 	case <-errChan:
 		// do nothing
 	}
+
+	// create images directory
+	imgdirPath := filepath.Join(config.Workdir, name+"__images")
+	err = os.MkdirAll(imgdirPath, 0777)
+	if err != nil {
+		return "", []string{}, fmt.Errorf("error: %v, could not create directory", err)
+	}
+	defer func() { _ = os.RemoveAll(imgdirPath) }()
+
+	// get images from docker volume
+	_ = exec.Command("docker", "run", "--rm", "-v", imgdirPath+":/dst", "-v", imagesVolume+":/src", "bash", "-c", "cp /src/* /dst/").Run()
 
 	// search image data
 	files, err := ioutil.ReadDir(imgdirPath)
