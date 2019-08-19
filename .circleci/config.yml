@@ -17,8 +17,7 @@ jobs:
       - checkout
 
       # specify any bash command here prefixed with `run: `
-      - run: dep ensure
-      - run: go build -tags netgo -ldflags '-extldflags "-static"'
+      - run: make build
       - store_artifacts:
           path: /go/src/github.com/theoldmoon0602/ShellgeiBot/ShellgeiBot
 workflows:
