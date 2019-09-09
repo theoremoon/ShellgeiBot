@@ -136,4 +136,16 @@ supervisorctl stop ShellgeiBot
 supervisorctl status
 ```
 
+## ShellgeiBotを起動する方法
+
+supervisorで停止したShellgeiBotを起動するにはsupervisorctlを使用します。
+以下のコマンドで起動します。
+
+```bash
+supervisorctl start ShellgeiBot
+
+# 起動の確認
+supervisorctl status
+```
+
 <!-- vim: set tw=0 nowrap: -->
