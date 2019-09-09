@@ -37,9 +37,13 @@ cd /opt/ShellgeiBot && make build
 
 # 設定ファイルのリンク
 sudo ln -sfn /opt/ShellgeiBot/infra/etc/supervisor/conf.d/ShellgeiBot.conf /etc/supervisor/conf.d/ShellgeiBot.conf
+
 # ログ出力先の作成
 # TODO ユーザー名とグループ名を知らないので
 sudo install -d -m 0755 -u TODO -g TODO /var/log/ShellgeiBot
+touch /var/log/ShellgeiBot/ShellgeiBot.log
+touch /var/log/ShellgeiBot/ShellgeiBot_error.log
+sudo chown TODO: /var/log/ShellgeiBot/ShellgeiBot*.log
 
 # supervisor のステータス確認
 sudo service supervisor status
@@ -54,6 +58,9 @@ sudo service supervisor status
 
 # daemonとしてShellgeiBotが存在することを確認
 ps aux | grep ShellgeiBot
+
+# supervisor上からdaemonの状態を確認
+supervisorctl status
 ```
 
 ## ShellgeiBot daemonの自動復旧の確認
@@ -94,6 +101,8 @@ make start
 
 # ダミーのスクリプトをShellgeiBotコマンドの代わりに配置
 cp infra/ShellgeiBot /opt/ShellgeiBot/
+# 自動起動用の設定ファイルを配置
+cp infra/etc/supervisor/conf.d/ShellgeiBot.conf /etc/supervisor/conf.d/ShellgeiBot.conf
 
 # supervisorが起動していないことを確認
 service supervisor status
@@ -113,6 +122,18 @@ kill 'プロセスID'
 
 # プロセスIDが変わっていることを確認
 ps aux | grep ShellgeiBot
+```
+
+## ShellgeiBotを停止する方法
+
+ShellgeiBotを停止するにはsupervisorctlを使用します。
+以下のコマンドで停止します。
+
+```bash
+supervisorctl stop ShellgeiBot
+
+# 停止の確認
+supervisorctl status
 ```
 
 <!-- vim: set tw=0 nowrap: -->
