@@ -8,9 +8,12 @@ ShellgeiBotをdaemon化し、異常終了した際に自動でプロセスを復
 
 ## 依存ツール
 
-ShellgeiBotプロセスの自動起動に以下のツールを使用します。
+ShellgeiBotプロセスの自動起動に以下のコマンドを使用します。
 
-* supervisor
+| コマンド | 役割 |
+|----------|------|
+| supervisor | ShellgeiBotをdaemon化し、その生存監視をする |
+| service | supervisorをdaemonとして管理する |
 
 その他、アプリをビルドするために以下のコマンドを使用します。
 
