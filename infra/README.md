@@ -28,6 +28,9 @@ Ubuntu環境での環境構築手順は以下のとおりです。
 sudo apt update -y
 sudo apt install -y supervisor
 sudo git clone https://github.com/theoremoon/ShellgeiBot /opt/ShellgeiBot
+# 所有者と所有グループを変更
+# TODO ユーザ名とグループを知らないため
+sudo chown -R TODO: /opt/ShellgeiBot
 
 # ShellgeiBotアプリのビルド
 cd /opt/ShellgeiBot && make build
@@ -35,7 +38,8 @@ cd /opt/ShellgeiBot && make build
 # 設定ファイルのリンク
 sudo ln -sfn /opt/ShellgeiBot/infra/etc/supervisor/conf.d/ShellgeiBot.conf /etc/supervisor/conf.d/ShellgeiBot.conf
 # ログ出力先の作成
-sudo mkdir /var/log/ShellgeiBot
+# TODO ユーザー名とグループ名を知らないので
+sudo install -d -m 0755 -u TODO -g TODO /var/log/ShellgeiBot
 
 # supervisor のステータス確認
 sudo service supervisor status
