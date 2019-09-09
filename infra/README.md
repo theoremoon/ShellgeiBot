@@ -10,8 +10,12 @@ ShellgeiBotをdaemon化し、異常終了した際に自動でプロセスを復
 
 ShellgeiBotプロセスの自動起動に以下のツールを使用します。
 
-* service
 * supervisor
+
+その他、アプリをビルドするために以下のコマンドを使用します。
+
+* git
+* make
 
 ## 環境構築
 
