@@ -46,7 +46,7 @@ An example of TwitterConfig.json
 
 An example of ShellgeiConfig.json
 
-```json
+```js
 {
 	"dockerimage": "theoldmoon0602/shellgeibot:master",
 	"timeout": "20s",  // timeout
