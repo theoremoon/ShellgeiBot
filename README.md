@@ -65,6 +65,7 @@ An example of ShellgeiConfig.json
 ## 3rd parties
 
 - SGWeb (https://shellgei-web.net) by [@kekeho](https://github.com/kekeho): https://github.com/kekeho/SGWeb
+- websh (https://websh.jiro4989.com/) by [@jiro4989](https://github.com/jiro4989): https://github.com/jiro4989/websh
 
 ## Author
 
