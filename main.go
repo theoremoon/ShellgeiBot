@@ -16,6 +16,8 @@ import (
 	"net/url"
 	"os"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/ChimeraCoder/anaconda"
 	"github.com/mattn/go-sixel"
@@ -42,7 +44,7 @@ func processTweet(tweet anaconda.Tweet, self anaconda.User, api *anaconda.Twitte
 		log.Println(err)
 		return
 	}
-	text, mediaUrls, err := extractShellgei(tweet, self, api, config.Tags,[]int64{})
+	text, mediaUrls, err := extractShellgei(tweet, self, api, config.Tags, []int64{})
 	if err != nil {
 		log.Println(err)
 		return
@@ -119,59 +121,109 @@ func botMain(twitterConfigFile, botConfigFile string) {
 	}
 }
 
-func botTest(botConfigFile, scriptFile string) {
+func botTest(botConfigFile string, scripts []string) {
 	config, err := parseBotConfig(botConfigFile)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	script, err := ioutil.ReadFile(scriptFile)
-	if err != nil {
-		log.Fatal(err)
+	type workResult struct {
+		Stdout string
+		Images []image.Image
+		Time   time.Duration
+		Error  error
 	}
 
-	result, b64imgs, err := runCmd(string(script), []string{}, config)
-	result = makeTweetable(result)
+	worker := func(scriptFile string, result chan<- workResult, wg *sync.WaitGroup) {
+		defer wg.Done()
 
-	if err != nil {
-		if err.(*stdError) == nil {
-			log.Fatal("internal Error")
-		}
-		return
-	}
-
-	if len(result) == 0 && len(b64imgs) == 0 {
-		fmt.Println("No result")
-		return
-	}
-
-	fmt.Println(result)
-	fmt.Println(len(b64imgs))
-	for _, b64img := range b64imgs {
-		imgBytes, err := base64.StdEncoding.DecodeString(b64img)
+		script, err := ioutil.ReadFile(scriptFile)
 		if err != nil {
-			log.Println(err)
-			continue
+			result <- workResult{
+				Error: err,
+			}
+			return
 		}
 
-		img, _, err := image.Decode(bytes.NewReader(imgBytes))
+		start := time.Now()
+		stdout, b64imgs, err := runCmd(string(script), []string{}, config)
+		t := time.Since(start)
 		if err != nil {
-			log.Println(err)
-			continue
+			result <- workResult{
+				Error: err,
+				Time:  t,
+			}
+			return
+		}
+		stdout = makeTweetable(stdout)
+		if stdout == "" && len(b64imgs) == 0 {
+			result <- workResult{
+				Error: fmt.Errorf("Empty result"),
+				Time:  t,
+			}
+			return
 		}
 
-		sixel.NewEncoder(os.Stdout).Encode(img)
+		images := make([]image.Image, 0, 4)
+		for _, b64img := range b64imgs {
+			imgBytes, err := base64.StdEncoding.DecodeString(b64img)
+			if err != nil {
+				// if media is not a valid image (e.g. meaningless bytestream, video)
+				log.Println(err)
+				continue
+			}
+
+			img, _, err := image.Decode(bytes.NewReader(imgBytes))
+			if err != nil {
+				log.Println(err)
+				continue
+			}
+			images = append(images, img)
+		}
+
+		result <- workResult{
+			Stdout: stdout,
+			Images: images,
+			Time:   t,
+			Error:  nil,
+		}
+	}
+
+	var wg sync.WaitGroup
+	results := make(chan workResult, len(scripts))
+	for _, scriptFile := range scripts {
+		wg.Add(1)
+		go worker(scriptFile, results, &wg)
+	}
+
+	wg.Wait()
+
+	for i := 1; i <= len(scripts); i++ {
+		r := <-results
+
+		fmt.Printf("Result: %d\n", i)
+		fmt.Println("=== Stdout ===")
+		fmt.Println(r.Stdout)
+		fmt.Println("=== Images ===")
+		for _, img := range r.Images {
+			sixel.NewEncoder(os.Stdout).Encode(img)
+		}
+		fmt.Println("=== Error  ===")
+		fmt.Println(r.Error)
+		fmt.Println("===  Time  ===")
+		fmt.Println(r.Time)
+		fmt.Println()
 	}
 }
 
 func main() {
 	if len(os.Args) < 3 {
-		log.Fatalf("<Usage>%s: TwitterConfig.json ShellgeiConfig.json | -test ShellgeiConfig.json script", os.Args[0])
+		log.Fatalf("<Usage>%s: TwitterConfig.json ShellgeiConfig.json | -test ShellgeiConfig.json [scripts]", os.Args[0])
 	}
 
 	if os.Args[1] == "-test" {
 		// testing mode
-		botTest(os.Args[2], os.Args[3])
+		botTest(os.Args[2], os.Args[3:])
 	} else {
 		// normal mode
 		botMain(os.Args[1], os.Args[2])

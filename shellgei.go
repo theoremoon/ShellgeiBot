@@ -134,7 +134,7 @@ func runCmd(cmdstr string, mediaUrls []string, config botConfig) (string, []stri
 
 	// use images volume intead of directory
 	// c.f. https://github.com/theoldmoon0602/ShellgeiBot/issues/41
-	imagesVolume := name+"__volume"
+	imagesVolume := name + "__volume"
 	defer func() {
 		_ = exec.Command("docker", "volume", "rm", imagesVolume).Run()
 	}()
