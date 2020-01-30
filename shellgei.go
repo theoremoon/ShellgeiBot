@@ -233,6 +233,12 @@ func runCmd(cmdstr string, mediaUrls []string, config botConfig) (string, []stri
 			continue
 		}
 
+		// check file is regular to avoid read special files
+		// e.g. /dev/zero, named pipe, etc.
+		if !finfo.Mode().IsRegular() {
+			continue
+		}
+
 		// read image file into memory
 		img, err := ioutil.ReadFile(path)
 		if err != nil {
