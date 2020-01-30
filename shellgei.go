@@ -201,7 +201,7 @@ func runCmd(cmdstr string, mediaUrls []string, config botConfig) (string, []stri
 	defer func() { _ = os.RemoveAll(imgdirPath) }()
 
 	// get images from docker volume
-	_ = exec.Command("docker", "run", "--rm", "-v", imgdirPath+":/dst", "-v", imagesVolume+":/src", "bash", "-c", "cp /src/* /dst/").Run()
+	_ = exec.Command("docker", "run", "--rm", "-v", imgdirPath+":/dst", "-v", imagesVolume+":/src", "bash", "-c", "mv /src/* /dst/").Run()  // do not use 'cp'. special device files hurts the system
 
 	// search image data
 	files, err := ioutil.ReadDir(imgdirPath)
