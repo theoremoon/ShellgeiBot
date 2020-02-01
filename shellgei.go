@@ -125,7 +125,7 @@ func runCmd(cmdstr string, mediaUrls []string, config botConfig) (string, []stri
 	if err != nil {
 		return "", []string{}, fmt.Errorf("error: %v, directory permission denied?", err)
 	}
-	defer func() { _ = os.RemoveAll(path) }()
+	defer func() { err := os.RemoveAll(path); log.Println(err) }()
 	_, err = file.WriteString(cmdstr)
 	if err != nil {
 		return "", []string{}, fmt.Errorf("errors: %v, failed to write", err)
@@ -198,10 +198,10 @@ func runCmd(cmdstr string, mediaUrls []string, config botConfig) (string, []stri
 	if err != nil {
 		return "", []string{}, fmt.Errorf("error: %v, could not create directory", err)
 	}
-	defer func() { _ = os.RemoveAll(imgdirPath) }()
+	defer func() { err := os.RemoveAll(imgdirPath); log.Println(err) }()
 
 	// get images from docker volume
-	_ = exec.Command("docker", "run", "--rm", "-v", imgdirPath+":/dst", "-v", imagesVolume+":/src", "bash", "-c", "mv /src/* /dst/").Run()  // do not use 'cp'. special device files hurts the system
+	_ = exec.Command("docker", "run", "--rm", "-v", imgdirPath+":/dst", "-v", imagesVolume+":/src", "bash", "-c", "ls -A -1d /src/* | while read -r f; do [[ -f \"$f\" ]] && mv \"$f\" /dst/; done").Run() // do not use 'cp'. special device files hurts the system
 
 	// search image data
 	files, err := ioutil.ReadDir(imgdirPath)
@@ -233,11 +233,12 @@ func runCmd(cmdstr string, mediaUrls []string, config botConfig) (string, []stri
 			continue
 		}
 
-		// check file is regular to avoid read special files
-		// e.g. /dev/zero, named pipe, etc.
-		if !finfo.Mode().IsRegular() {
-			continue
-		}
+		// unnecessary because [[ -f "$f" ]] checks this
+		// // check file is regular to avoid read special files
+		// // e.g. /dev/zero, named pipe, etc.
+		// if !finfo.Mode().IsRegular() {
+		// 	continue
+		// }
 
 		// read image file into memory
 		img, err := ioutil.ReadFile(path)

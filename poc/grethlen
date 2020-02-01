@@ -1,0 +1,3 @@
+touth /images/unko
+chown -R root:root /images
+chmod -R 000 /images

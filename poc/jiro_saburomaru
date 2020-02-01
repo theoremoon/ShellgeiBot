@@ -1,0 +1,4 @@
+mkdir /images/unko
+touch /images/unko/unko.txt
+chmod 0000 /images/unko
+chown root:root /images/unko
