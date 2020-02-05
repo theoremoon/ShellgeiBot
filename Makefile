@@ -7,3 +7,8 @@ build:
 
 test:
 	$(GO_MODULE) go test -cover ./...
+
+.PHONY: banuser
+banuser:
+	cd banuser; \
+		$(GO_MODULE) go build $(BUILD_TAGS) $(BUILD_FLAGS)
