@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"flag"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/url"
@@ -32,22 +33,32 @@ func parseTwitterKey(file string) (twitterKeys, error) {
 	return k, nil
 }
 
+// parse flags
+func parseFlags() (twitter string, screenName string, err error) {
+	t := flag.String("twitter", "", "path to twitter config json file")
+	u := flag.String("user", "", "twitter user screen name")
+	flag.Parse()
+	if t == nil || *t == "" {
+		flag.PrintDefaults()
+		return "", "", fmt.Errorf("'twitter' option is not specified")
+	}
+	if u == nil || *u == "" {
+		flag.PrintDefaults()
+		return "", "", fmt.Errorf("'user' option is not specified")
+	}
+	return *t, *u, nil
+}
+
 func run() error {
 	// parse flags
-	twitter := flag.String("twitter", "", "path to twitter config json file")
-	screenName := flag.String("user", "", "twitter user screen name")
-	flag.Parse()
-	if twitter == nil || *twitter == "" {
-		flag.PrintDefaults()
-		return nil
-	}
-	if screenName == nil || *screenName == "" {
-		flag.PrintDefaults()
+	twitter, screenName, err := parseFlags()
+	if err != nil {
+		log.Println(err)
 		return nil
 	}
 
 	// initialize Anaconda
-	twitterKey, err := parseTwitterKey(*twitter)
+	twitterKey, err := parseTwitterKey(twitter)
 	if err != nil {
 		return err
 	}
@@ -67,7 +78,7 @@ func run() error {
 	if err != nil {
 		return err
 	}
-	user, err := api.GetUsersShow(*screenName, url.Values{})
+	user, err := api.GetUsersShow(screenName, url.Values{})
 	if err != nil {
 		return err
 	}
