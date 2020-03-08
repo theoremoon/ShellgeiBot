@@ -202,16 +202,25 @@ func runCmd(cmdstr string, mediaUrls []string, config botConfig) (string, []stri
 	defer func() { err := os.RemoveAll(imgdirPath); log.Println(err) }()
 
 	// get images from docker volume
-	_ = exec.Command("docker", "run", "--rm", "-v", imgdirPath+":/dst", "-v", imagesVolume+":/src", "bash", "-c", "ls -A -1d /src/* | while read -r f; do [[ -f \"$f\" ]] && mv \"$f\" /dst/; done").Run() // do not use 'cp'. special device files hurts the system
-
-	// search image data
-	files, err := ioutil.ReadDir(imgdirPath)
-
-	// without image
-	if err != nil || len(files) == 0 {
-		return out.String(), []string{}, nil
+	if err := getImagesFromDockerVolume(imgdirPath, imagesVolume); err != nil {
+		log.Println(err)
 	}
 
+	// search image data
+	b64img, err := encodeImages(imgdirPath, config.MediaSize)
+	return out.String(), b64img, err
+}
+
+func getImagesFromDockerVolume(dstPath, vol string) error {
+	// do not use 'cp'. special device files hurts the system
+	return exec.Command("docker", "run", "--rm", "-v", dstPath+":/dst", "-v", vol+":/src", "bash", "-c", "ls -A -1d /src/* | while read -r f; do [[ -f \"$f\" ]] && mv \"$f\" /dst/; done").Run()
+}
+
+func encodeImages(imgdirPath string, size int64) ([]string, error) {
+	files, err := ioutil.ReadDir(imgdirPath)
+	if err != nil || len(files) == 0 {
+		return []string{}, nil
+	}
 	// with image
 	b64imgs := make([]string, 0, 4)
 	readcount := 0
@@ -230,7 +239,7 @@ func runCmd(cmdstr string, mediaUrls []string, config botConfig) (string, []stri
 
 		// if file size is zero or bigger than MediaSize[MB]
 		finfo, err := os.Stat(path)
-		if err != nil || finfo.Size() == 0 || finfo.Size() >= 1024*1024*config.MediaSize {
+		if err != nil || finfo.Size() == 0 || finfo.Size() >= 1024*1024*size {
 			continue
 		}
 
@@ -253,5 +262,5 @@ func runCmd(cmdstr string, mediaUrls []string, config botConfig) (string, []stri
 		b64imgs = append(b64imgs, b64img)
 		readcount++
 	}
-	return out.String(), b64imgs, nil
+	return b64imgs, nil
 }
