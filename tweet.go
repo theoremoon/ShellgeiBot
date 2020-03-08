@@ -55,7 +55,7 @@ func extractShellgei(tweet anaconda.Tweet, self anaconda.User, api *anaconda.Twi
 		if err != nil {
 			return "", nil, err
 		}
-		return extractShellgei(quoted, self, api, tags,append(checked,tweet.Id))
+		return extractShellgei(quoted, self, api, tags, append(checked, tweet.Id))
 	}
 
 	// get tweet text
@@ -99,7 +99,7 @@ func extractShellgei(tweet anaconda.Tweet, self anaconda.User, api *anaconda.Twi
 		return "", nil, err
 	}
 
-	quoteText, quoteUrls, err := extractShellgei(quoted, self, api, tags,append(checked,tweet.Id))
+	quoteText, quoteUrls, err := extractShellgei(quoted, self, api, tags, append(checked, tweet.Id))
 	if err != nil {
 		return "", nil, err
 	}
