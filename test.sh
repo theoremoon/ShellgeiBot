@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 for f in `ls -A poc/*`; do
     echo "test $f"
     mkdir testdir
