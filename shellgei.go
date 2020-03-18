@@ -214,7 +214,7 @@ func runCmd(cmdstr string, mediaUrls []string, config botConfig) (string, []stri
 func getImagesFromDockerVolume(dstPath, vol string, size int64) error {
 	// do not use 'cp'. special device files hurts the system
 	sizeStr := strconv.FormatInt(size*1024*1024, 10)
-	return exec.Command("docker", "run", "--rm", "-v", dstPath+":/dst", "-v", vol+":/src", "bash", "-c", "ls -A -1d /src/* | while read -r f; do [[ -f \"$f\" ]] && head -c "+sizeStr+" \"$f\" > \"/dst/$f\"; done").Run()
+	return exec.Command("docker", "run", "--rm", "-v", dstPath+":/dst", "-v", vol+":/src", "bash", "-c", "ls -A -1d /src/* | while read -r f; do [[ -f \"$f\" ]] && head -c "+sizeStr+" \"$f\" > \"${f/#\\/src/\\/dst}\"; done").Run()
 }
 
 func encodeImages(imgdirPath string, size int64) ([]string, error) {
