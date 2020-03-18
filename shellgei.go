@@ -202,7 +202,7 @@ func runCmd(cmdstr string, mediaUrls []string, config botConfig) (string, []stri
 	defer func() { err := os.RemoveAll(imgdirPath); log.Println(err) }()
 
 	// get images from docker volume
-	if err := getImagesFromDockerVolume(imgdirPath, imagesVolume); err != nil {
+	if err := getImagesFromDockerVolume(imgdirPath, imagesVolume, config.MediaSize); err != nil {
 		log.Println(err)
 	}
 
@@ -211,9 +211,10 @@ func runCmd(cmdstr string, mediaUrls []string, config botConfig) (string, []stri
 	return out.String(), b64img, err
 }
 
-func getImagesFromDockerVolume(dstPath, vol string) error {
+func getImagesFromDockerVolume(dstPath, vol string, size int64) error {
 	// do not use 'cp'. special device files hurts the system
-	return exec.Command("docker", "run", "--rm", "-v", dstPath+":/dst", "-v", vol+":/src", "bash", "-c", "ls -A -1d /src/* | while read -r f; do [[ -f \"$f\" ]] && mv \"$f\" /dst/; done").Run()
+	sizeStr := strconv.FormatInt(size*1024*1024, 10)
+	return exec.Command("docker", "run", "--rm", "-v", dstPath+":/dst", "-v", vol+":/src", "bash", "-c", "ls -A -1d /src/* | while read -r f; do [[ -f \"$f\" ]] && head -c "+sizeStr+" \"$f\" > \"/dst/$f\"; done").Run()
 }
 
 func encodeImages(imgdirPath string, size int64) ([]string, error) {
