@@ -15,7 +15,15 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
+
+	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/mount"
+	"github.com/docker/docker/api/types/network"
+	"github.com/docker/docker/client"
+	"github.com/docker/docker/pkg/stdcopy"
 )
 
 type botConfigJSON struct {
@@ -35,6 +43,8 @@ type botConfig struct {
 	Timeout     time.Duration
 	Tags        []string
 }
+
+var dkclient, _ = client.NewEnvClient()
 
 func parseBotConfig(file string) (botConfig, error) {
 	var c botConfigJSON
@@ -155,42 +165,83 @@ func runCmd(cmdstr string, mediaUrls []string, config botConfig) (string, []stri
 		}
 	}
 
-	// execute shellgei in the docker
-	cmd := exec.Command("docker", "run", "--rm",
-		"--net=none",
-		"-m", config.Memory,
-		"--oom-kill-disable",
-		"--pids-limit", "1024",
-		"--name", name,
-		"-v", path+":/"+name,
-		"-v", imagesVolume+":/images",
-		"-v", mediadirPath+":/media:ro",
-		config.DockerImage,
-
-		"bash", "-c", fmt.Sprintf("chmod +x /%s && sync &&  ./%s | stdbuf -o0 head -c 100K | stdbuf -o0 head -n 15", name, name))
+	mem, _ := strconv.ParseInt(config.Memory, 10, 64)
+	to := int(config.Timeout.Seconds())
+	f := false
 
 	// get result
 	var out bytes.Buffer
 	var stderr bytes.Buffer
-	cmd.Stdout = &out
-	cmd.Stderr = &stderr
 
 	ctx := context.Background()
 	ctx, cancel := context.WithTimeout(ctx, config.Timeout)
 	defer cancel()
 
-	errChan := make(chan error, 1)
-	go func(ctx context.Context) {
-		errChan <- cmd.Run()
-	}(ctx)
+	resp, err := dkclient.ContainerCreate(
+		ctx,
+		&container.Config{
+			Image:           config.DockerImage,
+			NetworkDisabled: true,
+			Cmd: []string{
+				"bash", "-c",
+				oneLiner(
+					"chmod", "+x", "/"+name, "&& sync &&", "./"+name, "|",
+					"stdbuf -o0 head -c 100K", "|",
+					"stdbuf -o0 head -n 15",
+				),
+			},
+			AttachStdout: true,
+			AttachStderr: true,
+			StopTimeout:  &to,
+		},
+		&container.HostConfig{
+			AutoRemove:   true, // AutoRemove を true にすることで --rm と同じになる
+			NetworkMode:  "none",
+			VolumeDriver: "local",
+			Mounts: []mount.Mount{
+				{
+					Type:     mount.TypeBind,
+					Source:   path,
+					Target:   "/" + name,
+					ReadOnly: false,
+				},
+				{
+					Type:     mount.TypeVolume,
+					Source:   imagesVolume,
+					Target:   "/images",
+					ReadOnly: false,
+				},
+				{
+					Type:     mount.TypeBind,
+					Source:   mediadirPath,
+					Target:   "/media",
+					ReadOnly: true,
+				},
+			},
+			Resources: container.Resources{
+				Memory:         mem,
+				OomKillDisable: &f,
+				PidsLimit:      1024,
+			},
+		},
+		&network.NetworkingConfig{},
+		name,
+	)
+	if err != nil {
+		return "", []string{}, fmt.Errorf("error: %v, could not container create correctly", err)
+	}
 
-	select {
-	case <-ctx.Done():
-		// kill send SIGKILL immediately
-		// though stop send SIGKILL after sending SIGTERM
-		_ = exec.Command("docker", "kill", name).Run()
-	case <-errChan:
-		// do nothing
+	if err := dkclient.ContainerStart(ctx, resp.ID, types.ContainerStartOptions{}); err != nil {
+		return "", []string{}, fmt.Errorf("error: %v ContainerStartError", err)
+	}
+
+	r, err := dkclient.ContainerLogs(ctx, resp.ID, types.ContainerLogsOptions{
+		ShowStdout: true,
+		ShowStderr: true,
+		Follow:     true,
+	})
+	if err != nil {
+		return "", []string{}, fmt.Errorf("error containerlogs : %v", err)
 	}
 
 	// create images directory
@@ -208,6 +259,25 @@ func runCmd(cmdstr string, mediaUrls []string, config botConfig) (string, []stri
 
 	// search image data
 	b64img, err := encodeImages(imgdirPath, config.MediaSize)
+
+	_, err = stdcopy.StdCopy(&out, &stderr, r)
+	if err == context.DeadlineExceeded {
+		c := context.Background()
+		// timeoutで落ちたときには終了しないため、Container stopでコンテナを終了させる
+		stoperr := dkclient.ContainerStop(c, resp.ID, nil)
+		if stoperr != nil {
+			return "", []string{}, fmt.Errorf("error: %v container timeout and could not stop container", stoperr)
+		}
+		return "", []string{}, err
+	} else if err != nil {
+		c := context.Background()
+		stoperr := dkclient.ContainerStop(c, resp.ID, nil)
+		if stoperr != nil {
+			return "", []string{}, fmt.Errorf("error: %v could not run and stop container", stoperr)
+		}
+		return "", []string{}, fmt.Errorf("error: %v, could not run correctly", err)
+	}
+
 	return out.String(), b64img, err
 }
 
@@ -264,4 +334,13 @@ func encodeImages(imgdirPath string, size int64) ([]string, error) {
 		readcount++
 	}
 	return b64imgs, nil
+}
+
+func oneLiner(args ...string) string {
+	var oneline string
+	for _, arg := range args {
+		oneline = oneline + arg + " "
+	}
+
+	return strings.TrimSpace(oneline)
 }
