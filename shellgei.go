@@ -12,7 +12,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -142,11 +141,13 @@ func runCmd(cmdstr string, mediaUrls []string, config botConfig) (string, []stri
 	}
 	file.Close()
 
+	ctx := context.Background()
+
 	// use images volume intead of directory
 	// c.f. https://github.com/theoldmoon0602/ShellgeiBot/issues/41
 	imagesVolume := name + "__volume"
 	defer func() {
-		_ = exec.Command("docker", "volume", "rm", imagesVolume).Run()
+		_ = dkclient.VolumeRemove(ctx, imagesVolume, true)
 	}()
 
 	// create media directory
@@ -172,10 +173,6 @@ func runCmd(cmdstr string, mediaUrls []string, config botConfig) (string, []stri
 	// get result
 	var out bytes.Buffer
 	var stderr bytes.Buffer
-
-	ctx := context.Background()
-	ctx, cancel := context.WithTimeout(ctx, config.Timeout)
-	defer cancel()
 
 	resp, err := dkclient.ContainerCreate(
 		ctx,
@@ -253,7 +250,7 @@ func runCmd(cmdstr string, mediaUrls []string, config botConfig) (string, []stri
 	defer func() { err := os.RemoveAll(imgdirPath); log.Println(err) }()
 
 	// get images from docker volume
-	if err := getImagesFromDockerVolume(imgdirPath, imagesVolume, config.MediaSize); err != nil {
+	if err := getImagesFromDockerVolume(imgdirPath, imagesVolume, config.DockerImage, config.MediaSize); err != nil {
 		log.Println(err)
 	}
 
@@ -281,10 +278,59 @@ func runCmd(cmdstr string, mediaUrls []string, config botConfig) (string, []stri
 	return out.String(), b64img, err
 }
 
-func getImagesFromDockerVolume(dstPath, vol string, size int64) error {
+func getImagesFromDockerVolume(dstPath, vol, img string, size int64) error {
 	// do not use 'cp'. special device files hurts the system
 	sizeStr := strconv.FormatInt(size*1024*1024, 10)
-	return exec.Command("docker", "run", "--rm", "-v", dstPath+":/dst", "-v", vol+":/src", "bash", "-c", "ls -A -1d /src/* | while read -r f; do [[ -f \"$f\" ]] && head -c "+sizeStr+" \"$f\" > \"${f/#\\/src/\\/dst}\"; done").Run()
+
+	ctx := context.Background()
+	resp, err := dkclient.ContainerCreate(
+		ctx,
+		&container.Config{
+			Image: img,
+			Cmd: []string{
+				"bash", "-c",
+				oneLiner(
+					"ls -A -1d /src/*", "|",
+					"while read -r f;", "do [[ -f \"$f\" ]] && head -c", sizeStr,
+					" \"$f\" > \"${f/#\\/src/\\/dst}\"; done",
+				),
+			},
+		},
+		&container.HostConfig{
+			AutoRemove:   true, // AutoRemove を true にすることで --rm と同じになる
+			VolumeDriver: "local",
+			Mounts: []mount.Mount{
+				{
+					Type:     mount.TypeBind,
+					Source:   dstPath,
+					Target:   "/dst",
+					ReadOnly: false,
+				},
+				{
+					Type:     mount.TypeVolume,
+					Source:   vol,
+					Target:   "/src",
+					ReadOnly: false,
+				},
+			},
+		},
+		&network.NetworkingConfig{},
+		"getImagesFromDockerVolume",
+	)
+	defer func() {
+		_ = dkclient.VolumeRemove(ctx, resp.ID, true)
+		// dkclient.CopyFromContainer()
+	}()
+	if err != nil {
+		return err
+	}
+
+	if err := dkclient.ContainerStart(ctx, resp.ID, types.ContainerStartOptions{}); err != nil {
+		return err
+	}
+
+	// return exec.Command("docker", "run", "--rm", "-v", dstPath+":/dst", "-v", vol+":/src").Run()
+	return nil
 }
 
 func encodeImages(imgdirPath string, size int64) ([]string, error) {
