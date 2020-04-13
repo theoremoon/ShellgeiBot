@@ -147,7 +147,8 @@ func runCmd(cmdstr string, mediaUrls []string, config botConfig) (string, []stri
 	// c.f. https://github.com/theoldmoon0602/ShellgeiBot/issues/41
 	imagesVolume := name + "__volume"
 	defer func() {
-		_ = dkclient.VolumeRemove(ctx, imagesVolume, true)
+		err = dkclient.VolumeRemove(ctx, imagesVolume, true)
+		log.Printf("remove volume errror : %v", err)
 	}()
 
 	// create media directory
@@ -227,6 +228,10 @@ func runCmd(cmdstr string, mediaUrls []string, config botConfig) (string, []stri
 	if err != nil {
 		return "", []string{}, fmt.Errorf("error: %v, could not container create correctly", err)
 	}
+	defer func() {
+		_ = dkclient.ContainerStop(ctx, resp.ID, nil)
+	}()
+	log.Printf("container ID : %v", resp.ID)
 
 	if err := dkclient.ContainerStart(ctx, resp.ID, types.ContainerStartOptions{}); err != nil {
 		return "", []string{}, fmt.Errorf("error: %v ContainerStartError", err)
@@ -321,9 +326,6 @@ func getImagesFromDockerVolume(dstPath, vol string, size int64) error {
 	if err != nil {
 		return err
 	}
-	defer func() {
-		_ = dkclient.VolumeRemove(ctx, vol, true)
-	}()
 
 	if err := dkclient.ContainerStart(ctx, resp.ID, types.ContainerStartOptions{}); err != nil {
 		return err
