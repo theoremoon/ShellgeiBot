@@ -147,6 +147,7 @@ func runCmd(cmdstr string, mediaUrls []string, config botConfig) (string, []stri
 	// c.f. https://github.com/theoldmoon0602/ShellgeiBot/issues/41
 	imagesVolume := name + "__volume"
 	defer func() {
+		log.Println("volumeremove")
 		err = dkclient.VolumeRemove(ctx, imagesVolume, true)
 		log.Printf("remove volume errror : %v", err)
 	}()
@@ -225,13 +226,13 @@ func runCmd(cmdstr string, mediaUrls []string, config botConfig) (string, []stri
 		&network.NetworkingConfig{},
 		name,
 	)
+	// defer func() {
+	// 	err = dkclient.ContainerRemove(ctx, resp.ID, types.ContainerRemoveOptions{})
+	// 	log.Printf("container remove : %v", err)
+	// }()
 	if err != nil {
 		return "", []string{}, fmt.Errorf("error: %v, could not container create correctly", err)
 	}
-	defer func() {
-		_ = dkclient.ContainerStop(ctx, resp.ID, nil)
-	}()
-	log.Printf("container ID : %v", resp.ID)
 
 	if err := dkclient.ContainerStart(ctx, resp.ID, types.ContainerStartOptions{}); err != nil {
 		return "", []string{}, fmt.Errorf("error: %v ContainerStartError", err)
@@ -255,9 +256,12 @@ func runCmd(cmdstr string, mediaUrls []string, config botConfig) (string, []stri
 	defer func() { err := os.RemoveAll(imgdirPath); log.Println(err) }()
 
 	// get images from docker volume
-	if err := getImagesFromDockerVolume(imgdirPath, imagesVolume, config.MediaSize); err != nil {
+	if err := getImagesFromDockerVolume(imgdirPath, imagesVolume, config.MediaSize, to); err != nil {
 		log.Println(err)
 	}
+
+	containers, _ := dkclient.ContainerList(ctx, types.ContainerListOptions{})
+	log.Printf("shellgei conitainers : %v", len(containers))
 
 	// search image data
 	b64img, err := encodeImages(imgdirPath, config.MediaSize)
@@ -283,7 +287,7 @@ func runCmd(cmdstr string, mediaUrls []string, config botConfig) (string, []stri
 	return out.String(), b64img, err
 }
 
-func getImagesFromDockerVolume(dstPath, vol string, size int64) error {
+func getImagesFromDockerVolume(dstPath, vol string, size int64, to int) error {
 	// do not use 'cp'. special device files hurts the system
 	sizeStr := strconv.FormatInt(size*1024*1024, 10)
 	name, _ := randStr(10)
@@ -301,10 +305,12 @@ func getImagesFromDockerVolume(dstPath, vol string, size int64) error {
 					"\"$f\" > \"${f/#\\/src/\\/dst}\"; done",
 				),
 			},
+			StopTimeout: &to,
 		},
 		&container.HostConfig{
-			AutoRemove:   true, // AutoRemove を true にすることで --rm と同じになる
-			VolumeDriver: "local",
+			AutoRemove:  true, // AutoRemove を true にすることで --rm と同じになる
+			NetworkMode: "none",
+			// VolumeDriver: "local",
 			Mounts: []mount.Mount{
 				{
 					Type:     mount.TypeBind,
@@ -323,6 +329,18 @@ func getImagesFromDockerVolume(dstPath, vol string, size int64) error {
 		&network.NetworkingConfig{},
 		name,
 	)
+	log.Printf("bash container ID : %v", resp.ID)
+
+	defer func() {
+		err = dkclient.ContainerStop(ctx, resp.ID, nil)
+		log.Printf("container stop : %v", err)
+		err = dkclient.ContainerRemove(ctx, resp.ID, types.ContainerRemoveOptions{})
+		log.Printf("container remove : %v", err)
+		// err = dkclient.VolumeRemove(ctx, vol, true)
+		// log.Printf("bash container volume remove : %v", err)
+		// containers, _ := dkclient.ContainerList(ctx, types.ContainerListOptions{})
+		// log.Printf("bash conitainers : %v", containers[0])
+	}()
 	if err != nil {
 		return err
 	}
