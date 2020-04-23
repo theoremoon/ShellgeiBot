@@ -147,7 +147,7 @@ func runCmd(cmdstr string, mediaUrls []string, config botConfig) (string, []stri
 	// c.f. https://github.com/theoldmoon0602/ShellgeiBot/issues/41
 	imagesVolume := name + "__volume"
 	defer func() {
-		log.Println("volumeremove")
+		time.Sleep(1 * time.Second)
 		err = dkclient.VolumeRemove(ctx, imagesVolume, true)
 		log.Printf("remove volume errror : %v", err)
 	}()
@@ -226,10 +226,6 @@ func runCmd(cmdstr string, mediaUrls []string, config botConfig) (string, []stri
 		&network.NetworkingConfig{},
 		name,
 	)
-	// defer func() {
-	// 	err = dkclient.ContainerRemove(ctx, resp.ID, types.ContainerRemoveOptions{})
-	// 	log.Printf("container remove : %v", err)
-	// }()
 	if err != nil {
 		return "", []string{}, fmt.Errorf("error: %v, could not container create correctly", err)
 	}
@@ -243,9 +239,12 @@ func runCmd(cmdstr string, mediaUrls []string, config botConfig) (string, []stri
 		ShowStderr: true,
 		Follow:     true,
 	})
+	defer r.Close()
 	if err != nil {
 		return "", []string{}, fmt.Errorf("error containerlogs : %v", err)
 	}
+
+	dkclient.ContainerWait(ctx, resp.ID)
 
 	// create images directory
 	imgdirPath := filepath.Join(config.Workdir, name+"__images")
@@ -259,9 +258,6 @@ func runCmd(cmdstr string, mediaUrls []string, config botConfig) (string, []stri
 	if err := getImagesFromDockerVolume(imgdirPath, imagesVolume, config.MediaSize, to); err != nil {
 		log.Println(err)
 	}
-
-	containers, _ := dkclient.ContainerList(ctx, types.ContainerListOptions{})
-	log.Printf("shellgei conitainers : %v", len(containers))
 
 	// search image data
 	b64img, err := encodeImages(imgdirPath, config.MediaSize)
@@ -292,7 +288,8 @@ func getImagesFromDockerVolume(dstPath, vol string, size int64, to int) error {
 	sizeStr := strconv.FormatInt(size*1024*1024, 10)
 	name, _ := randStr(10)
 
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
 	resp, err := dkclient.ContainerCreate(
 		ctx,
 		&container.Config{
@@ -308,9 +305,9 @@ func getImagesFromDockerVolume(dstPath, vol string, size int64, to int) error {
 			StopTimeout: &to,
 		},
 		&container.HostConfig{
-			AutoRemove:  true, // AutoRemove を true にすることで --rm と同じになる
-			NetworkMode: "none",
-			// VolumeDriver: "local",
+			AutoRemove:   true, // AutoRemove を true にすることで --rm と同じになる
+			NetworkMode:  "none",
+			VolumeDriver: "local",
 			Mounts: []mount.Mount{
 				{
 					Type:     mount.TypeBind,
@@ -329,23 +326,16 @@ func getImagesFromDockerVolume(dstPath, vol string, size int64, to int) error {
 		&network.NetworkingConfig{},
 		name,
 	)
-	log.Printf("bash container ID : %v", resp.ID)
-
-	defer func() {
-		err = dkclient.ContainerStop(ctx, resp.ID, nil)
-		log.Printf("container stop : %v", err)
-		err = dkclient.ContainerRemove(ctx, resp.ID, types.ContainerRemoveOptions{})
-		log.Printf("container remove : %v", err)
-		// err = dkclient.VolumeRemove(ctx, vol, true)
-		// log.Printf("bash container volume remove : %v", err)
-		// containers, _ := dkclient.ContainerList(ctx, types.ContainerListOptions{})
-		// log.Printf("bash conitainers : %v", containers[0])
-	}()
 	if err != nil {
 		return err
 	}
 
 	if err := dkclient.ContainerStart(ctx, resp.ID, types.ContainerStartOptions{}); err != nil {
+		return err
+	}
+
+	_, err = dkclient.ContainerWait(ctx, resp.ID)
+	if err != nil {
 		return err
 	}
 
