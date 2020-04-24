@@ -44,6 +44,7 @@ type botConfig struct {
 }
 
 var dkclient, _ = client.NewEnvClient()
+var retryCount = 10
 
 func parseBotConfig(file string) (botConfig, error) {
 	var c botConfigJSON
@@ -147,8 +148,19 @@ func runCmd(cmdstr string, mediaUrls []string, config botConfig) (string, []stri
 	// c.f. https://github.com/theoldmoon0602/ShellgeiBot/issues/41
 	imagesVolume := name + "__volume"
 	defer func() {
-		time.Sleep(1 * time.Second)
-		err = dkclient.VolumeRemove(ctx, imagesVolume, true)
+		for i := 0; i < retryCount; i++ {
+			err = dkclient.VolumeRemove(ctx, imagesVolume, true)
+			if err == nil {
+				break
+			} else if strings.HasPrefix(err.Error(),
+				fmt.Sprintf("Error response from daemon: remove %v: volume is in use",
+					imagesVolume,
+				)) {
+				continue
+			} else {
+				log.Printf("Unexpected RemoveVolume error : %v\n", err)
+			}
+		}
 		log.Printf("remove volume errror : %v", err)
 	}()
 
