@@ -143,11 +143,14 @@ func runCmd(cmdstr string, mediaUrls []string, config botConfig) (string, []stri
 	file.Close()
 
 	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(ctx, config.Timeout)
+	defer cancel()
 
 	// use images volume intead of directory
 	// c.f. https://github.com/theoldmoon0602/ShellgeiBot/issues/41
 	imagesVolume := name + "__volume"
 	defer func() {
+		ctx = context.Background()
 		for i := 0; i < retryCount; i++ {
 			err = dkclient.VolumeRemove(ctx, imagesVolume, true)
 			if err == nil {
@@ -181,7 +184,6 @@ func runCmd(cmdstr string, mediaUrls []string, config botConfig) (string, []stri
 	}
 
 	mem, _ := strconv.ParseInt(config.Memory, 10, 64)
-	to := int(config.Timeout.Seconds())
 	f := false
 
 	// get result
@@ -203,7 +205,6 @@ func runCmd(cmdstr string, mediaUrls []string, config botConfig) (string, []stri
 			},
 			AttachStdout: true,
 			AttachStderr: true,
-			StopTimeout:  &to,
 		},
 		&container.HostConfig{
 			AutoRemove:   true, // AutoRemove を true にすることで --rm と同じになる
@@ -256,7 +257,18 @@ func runCmd(cmdstr string, mediaUrls []string, config botConfig) (string, []stri
 		return "", []string{}, fmt.Errorf("error containerlogs : %v", err)
 	}
 
-	dkclient.ContainerWait(ctx, resp.ID)
+	_, toerr := dkclient.ContainerWait(ctx, resp.ID)
+	if toerr == context.DeadlineExceeded {
+		c := context.Background()
+		// timeoutで落ちたときには終了しないため、Container stopでコンテナを終了させる
+		stoperr := dkclient.ContainerStop(c, resp.ID, nil)
+		if stoperr != nil {
+			return "", []string{}, fmt.Errorf("error: %v container timeout and could not stop container", stoperr)
+		}
+		return "", []string{}, toerr
+	} else if toerr != nil {
+		return "", []string{}, fmt.Errorf("error: %v, could not run correctly", toerr)
+	}
 
 	// create images directory
 	imgdirPath := filepath.Join(config.Workdir, name+"__images")
@@ -267,7 +279,7 @@ func runCmd(cmdstr string, mediaUrls []string, config botConfig) (string, []stri
 	defer func() { err := os.RemoveAll(imgdirPath); log.Println(err) }()
 
 	// get images from docker volume
-	if err := getImagesFromDockerVolume(imgdirPath, imagesVolume, config.MediaSize, to); err != nil {
+	if err := getImagesFromDockerVolume(imgdirPath, imagesVolume, config.MediaSize); err != nil {
 		log.Println(err)
 	}
 
@@ -275,27 +287,14 @@ func runCmd(cmdstr string, mediaUrls []string, config botConfig) (string, []stri
 	b64img, err := encodeImages(imgdirPath, config.MediaSize)
 
 	_, err = stdcopy.StdCopy(&out, &stderr, r)
-	if err == context.DeadlineExceeded {
-		c := context.Background()
-		// timeoutで落ちたときには終了しないため、Container stopでコンテナを終了させる
-		stoperr := dkclient.ContainerStop(c, resp.ID, nil)
-		if stoperr != nil {
-			return "", []string{}, fmt.Errorf("error: %v container timeout and could not stop container", stoperr)
-		}
-		return "", []string{}, err
-	} else if err != nil {
-		c := context.Background()
-		stoperr := dkclient.ContainerStop(c, resp.ID, nil)
-		if stoperr != nil {
-			return "", []string{}, fmt.Errorf("error: %v could not run and stop container", stoperr)
-		}
-		return "", []string{}, fmt.Errorf("error: %v, could not run correctly", err)
+	if err != nil {
+		return "", []string{}, fmt.Errorf("error: %v, stdcopy error", err)
 	}
 
 	return out.String(), b64img, err
 }
 
-func getImagesFromDockerVolume(dstPath, vol string, size int64, to int) error {
+func getImagesFromDockerVolume(dstPath, vol string, size int64) error {
 	// do not use 'cp'. special device files hurts the system
 	sizeStr := strconv.FormatInt(size*1024*1024, 10)
 	name, _ := randStr(10)
@@ -314,7 +313,6 @@ func getImagesFromDockerVolume(dstPath, vol string, size int64, to int) error {
 					"\"$f\" > \"${f/#\\/src/\\/dst}\"; done",
 				),
 			},
-			StopTimeout: &to,
 		},
 		&container.HostConfig{
 			AutoRemove:   true, // AutoRemove を true にすることで --rm と同じになる

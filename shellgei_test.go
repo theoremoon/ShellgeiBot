@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/base64"
 	"os"
 	"os/exec"
@@ -76,20 +77,20 @@ func TestRunCmd(t *testing.T) {
 		}
 	})
 
-	// t.Run("check timeout", func(t *testing.T) {
-	// 	out, imgs, err := runCmd("sleep 2", nil, botConfig{
-	// 		DockerImage: dockerImage,
-	// 		Workdir:     "/tmp",
-	// 		Memory:      "100M",
-	// 		MediaSize:   250,
-	// 		Timeout:     time.Duration(1 * time.Second),
-	// 		Tags:        []string{},
-	// 	})
-	// 	if err != context.DeadlineExceeded {
-	// 		t.Fatalf("unexpected error, %v", err)
-	// 	}
-	// 	if len(imgs) != 0 && out == "" {
-	// 		t.Errorf("got %+v, expected empty", imgs)
-	// 	}
-	// })
+	t.Run("check timeout", func(t *testing.T) {
+		out, imgs, err := runCmd("sleep 2", nil, botConfig{
+			DockerImage: dockerImage,
+			Workdir:     "/tmp",
+			Memory:      "100M",
+			MediaSize:   250,
+			Timeout:     time.Duration(1 * time.Second),
+			Tags:        []string{},
+		})
+		if err != context.DeadlineExceeded {
+			t.Fatalf("unexpected error, %v", err)
+		}
+		if len(imgs) != 0 && out == "" {
+			t.Errorf("got %+v, expected empty", imgs)
+		}
+	})
 }
