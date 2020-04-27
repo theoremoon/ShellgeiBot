@@ -164,7 +164,9 @@ func runCmd(cmdstr string, mediaUrls []string, config botConfig) (string, []stri
 				log.Printf("Unexpected RemoveVolume error : %v\n", err)
 			}
 		}
-		log.Printf("remove volume errror : %v", err)
+		if err != nil {
+				log.Printf("remove volume errror : %v", err)
+		}
 	}()
 
 	// create media directory
