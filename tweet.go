@@ -152,7 +152,7 @@ func parseTwitterKey(file string) (twitterKeys, error) {
 	return k, nil
 }
 
-func makeTweetable(text string) string {
+func makeTweetable(text string, untrues []string) string {
 	a := []rune(text)
 	i := 0
 	l := 0
@@ -166,7 +166,16 @@ func makeTweetable(text string) string {
 			break
 		}
 	}
-	return string(a[:i])
+
+	result := string(a[:i])
+
+	// big brother is watching your tweet for everyone's happy
+	for _, untrue := range untrues {
+		if strings.Index(result, untrue) >= 0 {
+			return ""
+		}
+	}
+	return result
 }
 
 func tweetURL(tweet anaconda.Tweet) string {

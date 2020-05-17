@@ -32,6 +32,7 @@ type botConfigJSON struct {
 	MediaSize   int64    `json:"mediasize"`
 	Timeout     string   `json:"timeout"`
 	Tags        []string `json:"tags"`
+	Untrue      []string `json:"untrue"`
 }
 
 type botConfig struct {
@@ -41,6 +42,7 @@ type botConfig struct {
 	MediaSize   int64
 	Timeout     time.Duration
 	Tags        []string
+	Untrue      []string
 }
 
 var dkclient, _ = client.NewEnvClient()
@@ -73,6 +75,7 @@ func parseBotConfig(file string) (botConfig, error) {
 		return config, err
 	}
 	config.Tags = c.Tags
+	config.Untrue = c.Untrue
 	return config, nil
 }
 
@@ -165,7 +168,7 @@ func runCmd(cmdstr string, mediaUrls []string, config botConfig) (string, []stri
 			}
 		}
 		if err != nil {
-				log.Printf("remove volume errror : %v", err)
+			log.Printf("remove volume errror : %v", err)
 		}
 	}()
 

@@ -53,7 +53,7 @@ func processTweet(tweet anaconda.Tweet, self anaconda.User, api *anaconda.Twitte
 	insertShellGei(db, tweet.User.Id, tweet.User.ScreenName, tweet.Id, text, t.Unix())
 
 	result, b64imgs, err := runCmd(text, mediaUrls, config)
-	result = makeTweetable(result)
+	result = makeTweetable(result, config.Untrue)
 	insertResult(db, tweet.Id, result, err)
 
 	if err != nil {
@@ -155,7 +155,7 @@ func botTest(botConfigFile string, scripts []string) {
 			}
 			return
 		}
-		stdout = makeTweetable(stdout)
+		stdout = makeTweetable(stdout, config.Untrue)
 		if stdout == "" && len(b64imgs) == 0 {
 			result <- workResult{
 				Error: fmt.Errorf("Empty result"),
