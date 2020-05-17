@@ -53,7 +53,8 @@ An example of ShellgeiConfig.json
 	"workdir": ".",    // where to make temporary directories
 	"memory": "100M",  // max memory size of docker container
 	"mediasize": 250,  // max media size to be able to creaate
-	"tags": ["シェル芸", "危険シェル芸", "ゆるシェル"]  // trigger tags
+	"tags": ["シェル芸", "危険シェル芸", "ゆるシェル"],  // trigger tags
+	"untrue": ["とじゃんけん2020"]  // words which untrue
 }
 ```
 
