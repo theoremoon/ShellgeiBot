@@ -42,7 +42,7 @@ type botConfig struct {
 	MediaSize   int64
 	Timeout     time.Duration
 	Tags        []string
-	Runtime     string `json:"runtime"`
+	Runtime     string
 }
 
 var dkclient, _ = client.NewEnvClient()
@@ -75,6 +75,7 @@ func parseBotConfig(file string) (botConfig, error) {
 		return config, err
 	}
 	config.Tags = c.Tags
+	config.Runtime = c.Runtime
 	return config, nil
 }
 
