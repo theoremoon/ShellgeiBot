@@ -32,6 +32,7 @@ type botConfigJSON struct {
 	MediaSize   int64    `json:"mediasize"`
 	Timeout     string   `json:"timeout"`
 	Tags        []string `json:"tags"`
+	Runtime     string   `json:"runtime"`
 }
 
 type botConfig struct {
@@ -41,6 +42,7 @@ type botConfig struct {
 	MediaSize   int64
 	Timeout     time.Duration
 	Tags        []string
+	Runtime     string `json:"runtime"`
 }
 
 var dkclient, _ = client.NewEnvClient()
@@ -165,7 +167,7 @@ func runCmd(cmdstr string, mediaUrls []string, config botConfig) (string, []stri
 			}
 		}
 		if err != nil {
-				log.Printf("remove volume errror : %v", err)
+			log.Printf("remove volume errror : %v", err)
 		}
 	}()
 
@@ -209,7 +211,8 @@ func runCmd(cmdstr string, mediaUrls []string, config botConfig) (string, []stri
 			AttachStderr: true,
 		},
 		&container.HostConfig{
-			AutoRemove:   true, // AutoRemove を true にすることで --rm と同じになる
+			AutoRemove:   true,           // AutoRemove を true にすることで --rm と同じになる
+			Runtime:      config.Runtime, // specify "runsc" if needed
 			NetworkMode:  "none",
 			VolumeDriver: "local",
 			Mounts: []mount.Mount{
