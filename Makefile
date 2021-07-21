@@ -10,5 +10,4 @@ test:
 
 .PHONY: banuser
 banuser:
-	cd banuser; \
-		$(GO_MODULE) go build $(BUILD_TAGS) $(BUILD_FLAGS)
+	$(GO_MODULE) go build $(BUILD_TAGS) $(BUILD_FLAGS) ./cmd/banuser
