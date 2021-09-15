@@ -1,6 +1,6 @@
 module github.com/theoldmoon0602/ShellgeiBot
 
-go 1.12
+go 1.16
 
 require (
 	github.com/ChimeraCoder/anaconda v2.0.0+incompatible

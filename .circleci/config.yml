@@ -6,7 +6,7 @@ jobs:
   build:
     docker:
       # specify the version
-      - image: circleci/golang:1.12
+      - image: circleci/golang:1.16
       # Specify service dependencies here if necessary
       # CircleCI maintains a library of pre-built images
       # documented at https://circleci.com/docs/2.0/circleci-images/
@@ -19,11 +19,15 @@ jobs:
       # specify any bash command here prefixed with `run: `
       - run: make build
       - store_artifacts:
-          path: /go/src/github.com/theoldmoon0602/ShellgeiBot/ShellgeiBot
+          path: /go/src/github.com/theoldmoon0602/ShellgeiBot/bin/ShellgeiBot
 
       - run: make banuser
       - store_artifacts:
-          path: /go/src/github.com/theoldmoon0602/ShellgeiBot/banuser/banuser
+          path: /go/src/github.com/theoldmoon0602/ShellgeiBot/bin/banuser
+
+      - run: make followback
+      - store_artifacts:
+          path: /go/src/github.com/theoldmoon0602/ShellgeiBot/bin/followback
 workflows:
   version: 2
   commit-workflow:
