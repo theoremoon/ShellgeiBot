@@ -2,10 +2,8 @@ package main
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"html"
-	"io/ioutil"
 	"log"
 	"net/url"
 	"strings"
@@ -13,13 +11,6 @@ import (
 
 	"github.com/ChimeraCoder/anaconda"
 )
-
-type twitterKeys struct {
-	ConsumerKey    string `json:"ConsumerKey"`
-	ConsumerSecret string `json:"ConsumerSecret"`
-	AccessToken    string `json:"AccessToken"`
-	AccessSecret   string `json:"AccessSecret"`
-}
 
 // tweetEntitiesHashtags Twitter.Entities.Hashtagsが無名構造体のため、該当構造
 // 体の初期化に手間がかかる。全く同じ構造体ではあるが、実装を容易にするため部
@@ -137,19 +128,6 @@ func removeTags(text string, hashtags, extHashtags tweetEntitiesHashtags, search
 		}
 	}
 	return strings.TrimSpace(b.String())
-}
-
-func parseTwitterKey(file string) (twitterKeys, error) {
-	var k twitterKeys
-	raw, err := ioutil.ReadFile(file)
-	if err != nil {
-		return k, err
-	}
-	err = json.Unmarshal(raw, &k)
-	if err != nil {
-		return k, err
-	}
-	return k, nil
 }
 
 func makeTweetable(text string) string {
