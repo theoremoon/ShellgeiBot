@@ -98,45 +98,58 @@ func difference(xs, ys []int64) []int64 {
 }
 
 /// idsに渡されたidを持つuserをunfollowする
-func unfollowByIDs(client *twitter.Client, ids []int64) error {
+func unfollowByIDs(client *twitter.Client, ids []int64) ([]int64, error) {
 	// twitter APIの制限により400件より多くを一度に処理しない
 	// usage的に黙って400件だけ処理しても困らないのでassertとか入れてない
 	n := len(ids)
 	if n > 400 {
 		n = 400
 	}
+	doneids := make([]int64, 0, n)
 	for _, id := range ids[:n] {
 		_, _, err := client.Friendships.Destroy(&twitter.FriendshipDestroyParams{
 			UserID: id,
 		})
 		if err != nil {
-			return xerrors.Errorf(": %w", err)
+			return doneids, xerrors.Errorf(": %w", err)
 		}
 
+		doneids = append(doneids, id)
 		time.Sleep(1 * time.Minute) // 連続follow backによる制限を回避したい
 	}
-	return nil
+	return doneids, nil
 }
 
 /// idsに渡されたidを持つuserをfollowする
-func followByIDs(client *twitter.Client, ids []int64) error {
+func followByIDs(client *twitter.Client, ids []int64) ([]int64, error) {
 	// twitter APIの制限により400件より多くを一度に処理しない
 	// usage的に黙って400件だけ処理しても困らないのでassertとか入れてない
 	n := len(ids)
 	if n > 400 {
 		n = 400
 	}
+
+	doneids := make([]int64, 0, n)
+	var followError twitter.APIError
 	for _, id := range ids[:n] {
 		_, _, err := client.Friendships.Create(&twitter.FriendshipCreateParams{
 			UserID: id,
 		})
-		if err != nil {
-			return xerrors.Errorf(": %w", err)
+		if err != nil && xerrors.As(err, &followError) {
+			// フォローリクエストを既に送っていた場合のエラーは気にしない
+			if len(followError.Errors) == 1 && followError.Errors[0].Code == 160 {
+				// do nothing
+			} else {
+				return doneids, xerrors.Errorf(": %w", err)
+			}
+		} else if err != nil {
+			return doneids, xerrors.Errorf(": %w", err)
 		}
 
+		doneids = append(doneids, id)
 		time.Sleep(1 * time.Minute) // 連続follow backによる制限を回避したい
 	}
-	return nil
+	return doneids, nil
 }
 
 func run() error {
@@ -194,15 +207,47 @@ func run() error {
 		u, e := pastFollowerMap[id]
 		if e && u.FollowedFrom < t && len(newFollowingIDs) < 400 {
 			newFollowingIDs = append(newFollowingIDs, id)
-			delete(pastFollowerMap, id)
 		} else if !e {
 			newFollowerIDs = append(newFollowerIDs, id)
 		}
 	}
 
+	// ここ並列でやるのでwgつくる
+	wg := &sync.WaitGroup{}
+	// unfollow
+	wg.Add(1)
+	go func() {
+		unfollowIDs := difference(followingIDs, followerIDs)
+		_, err := unfollowByIDs(client, unfollowIDs)
+		if err != nil {
+			log.Printf("%+v\n", err)
+		}
+		wg.Done()
+	}()
+
+	// follow
+	followedUserIDs := make(map[int64]struct{})
+	wg.Add(1)
+	go func() {
+		doneids, err := followByIDs(client, newFollowingIDs)
+		if err != nil {
+			log.Printf("%+v\n", err)
+		}
+		for _, id := range doneids {
+			followedUserIDs[id] = struct{}{}
+		}
+		wg.Done()
+	}()
+
+	wg.Wait()
+
 	// 新しくフォローされていたユーザの情報を保存しておく
 	saveFollowers := make([]Follower, 0)
 	for _, u := range pastFollowerMap {
+		// 今回フォローしたユーザはもう保存しない
+		if _, followed := followedUserIDs[u.UserID]; !followed {
+			continue
+		}
 		saveFollowers = append(saveFollowers, u)
 	}
 	for _, id := range newFollowerIDs {
@@ -219,29 +264,6 @@ func run() error {
 		return xerrors.Errorf(": %w", err)
 	}
 
-	wg := &sync.WaitGroup{}
-	// unfollow
-	wg.Add(1)
-	go func() {
-		unfollowIDs := difference(followingIDs, followerIDs)
-		err := unfollowByIDs(client, unfollowIDs)
-		if err != nil {
-			log.Printf("%+v\n", err)
-		}
-		wg.Done()
-	}()
-
-	// follow
-	wg.Add(1)
-	go func() {
-		err := followByIDs(client, newFollowingIDs)
-		if err != nil {
-			log.Printf("%+v\n", err)
-		}
-		wg.Done()
-	}()
-
-	wg.Wait()
 	return nil
 }
 
