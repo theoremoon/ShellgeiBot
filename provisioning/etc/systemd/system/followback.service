@@ -5,7 +5,7 @@ After=network.target
 [Service]
 User=shellgeibot
 Group=shellgeibot
-ExecStart=/home/shellgeibot/followback/followback -followers /home/shellgeibot/followback/followers.json -twitter /home/shellgeibot/followback/shellgeibot.json  -ndays 1
+ExecStart=/home/shellgeibot/followback/followback -followers /home/shellgeibot/followback/followers.json -twitter /home/shellgeibot/followback/minyoruminyon.json  -ndays 30
 WorkingDirectory=/home/shellgeibot/followback
 
 [Install]
