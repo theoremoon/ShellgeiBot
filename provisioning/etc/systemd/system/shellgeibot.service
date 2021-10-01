@@ -1,0 +1,16 @@
+[Unit]
+Description=shellgeibot
+After=network.target
+
+[Service]
+Type=simple
+Restart=always
+User=shellgeibot
+Group=shellgeibot
+ExecStart=/home/shellgeibot/ShellgeiBot /home/shellgeibot/minyoruminyon.json /home/shellgeibot/config.json
+WorkingDirectory=/home/shellgeibot
+StandardOutput=append:/var/log/shellgeibot/stdout.log
+StandardError=append:/var/log/shellgeibot/stderr.log
+
+[Install]
+WantedBy=multi-user.target

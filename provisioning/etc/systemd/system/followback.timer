@@ -1,0 +1,8 @@
+[Unit]
+Description=run followback every day
+
+[Timer]
+OnUnitActiveSec=1d
+
+[Install]
+WantedBy=multi-user.target

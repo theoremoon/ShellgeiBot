@@ -22,6 +22,7 @@ import (
 	"github.com/ChimeraCoder/anaconda"
 	"github.com/mattn/go-sixel"
 	_ "github.com/mattn/go-sqlite3"
+	"github.com/theoldmoon0602/ShellgeiBot/twitter"
 )
 
 func processTweet(tweet anaconda.Tweet, self anaconda.User, api *anaconda.TwitterApi, db *sql.DB, config botConfig) {
@@ -76,7 +77,7 @@ func processTweet(tweet anaconda.Tweet, self anaconda.User, api *anaconda.Twitte
 
 /// ShellgeiBot main function
 func botMain(twitterConfigFile, botConfigFile string) {
-	twitterKey, err := parseTwitterKey(twitterConfigFile)
+	twitterKey, err := twitter.ParseTwitterKey(twitterConfigFile)
 	if err != nil {
 		log.Fatal(err)
 	}
