@@ -113,6 +113,7 @@ func unfollowByIDs(client *twitter.Client, ids []int64) ([]int64, error) {
 		if err != nil {
 			return doneids, xerrors.Errorf(": %w", err)
 		}
+		log.Printf("unfollowed %d\n", id)
 
 		doneids = append(doneids, id)
 		time.Sleep(1 * time.Minute) // 連続follow backによる制限を回避したい
@@ -145,6 +146,7 @@ func followByIDs(client *twitter.Client, ids []int64) ([]int64, error) {
 		} else if err != nil {
 			return doneids, xerrors.Errorf(": %w", err)
 		}
+		log.Printf("followed %d\n", id)
 
 		doneids = append(doneids, id)
 		time.Sleep(1 * time.Minute) // 連続follow backによる制限を回避したい
