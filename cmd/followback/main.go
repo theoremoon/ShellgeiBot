@@ -203,8 +203,8 @@ func run() error {
 	// フォローするユーザ決めたりする
 	now := time.Now()
 	t := now.AddDate(0, 0, -ndays).Unix() // この時刻より前にフォローしてくれている必要がある
-	newFollowerIDs := make([]int64, 0)
-	newFollowingIDs := make([]int64, 0)
+	newFollowerIDs := make([]int64, 0)    // 今回チェックしたら新しくフォローしてくれていた人
+	newFollowingIDs := make([]int64, 0)   // 今回でフォローしてくれてからndays経過したのでフォローを返す対象
 	for _, id := range followerIDs {
 		u, e := pastFollowerMap[id]
 		if e && u.FollowedFrom < t && len(newFollowingIDs) < 400 {
@@ -247,9 +247,10 @@ func run() error {
 	saveFollowers := make([]Follower, 0)
 	for _, u := range pastFollowerMap {
 		// 今回フォローしたユーザはもう保存しない
-		if _, followed := followedUserIDs[u.UserID]; !followed {
+		if _, followed := followedUserIDs[u.UserID]; followed {
 			continue
 		}
+
 		saveFollowers = append(saveFollowers, u)
 	}
 	for _, id := range newFollowerIDs {
@@ -258,6 +259,8 @@ func run() error {
 			FollowedFrom: now.Unix(),
 		})
 	}
+
+	// 保存する
 	jsonBytes, err := json.MarshalIndent(saveFollowers, "", "  ")
 	if err != nil {
 		return xerrors.Errorf(": %w", err)
