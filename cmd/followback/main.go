@@ -122,10 +122,13 @@ func unfollowByIDs(client *twitter.Client, ids []int64) ([]int64, error) {
 }
 
 /// idsに渡されたidを持つuserをfollowする
-func followByIDs(client *twitter.Client, ids []int64) ([]int64, error) {
+func followByIDs(client *twitter.Client, maxFollowsAtOnce int, ids []int64) ([]int64, error) {
 	// twitter APIの制限により400件より多くを一度に処理しない
 	// usage的に黙って400件だけ処理しても困らないのでassertとか入れてない
 	n := len(ids)
+    if n > maxFollowsAtOnce {
+        n = maxFollowsAtOnce
+    }
 	if n > 400 {
 		n = 400
 	}
@@ -158,9 +161,11 @@ func run() error {
 	var followerFile string
 	var keyFile string
 	var ndays int
+	var maxFollowsPerDay int
 	flag.StringVar(&followerFile, "followers", "", "<followers.json>")
 	flag.StringVar(&keyFile, "twitter", "", "<twitterkey.json>")
 	flag.IntVar(&ndays, "ndays", 1, "<days to followback>")
+	flag.IntVar(&maxFollowsPerDay, "follows", 20, "<max follows per day>")
 	flag.Usage = func() {
 		fmt.Printf("Usage: %s\n\n", os.Args[1])
 		flag.PrintDefaults()
@@ -207,7 +212,7 @@ func run() error {
 	newFollowingIDs := make([]int64, 0)   // 今回でフォローしてくれてからndays経過したのでフォローを返す対象
 	for _, id := range followerIDs {
 		u, e := pastFollowerMap[id]
-		if e && u.FollowedFrom < t && len(newFollowingIDs) < 400 {
+		if e && u.FollowedFrom < t && len(newFollowingIDs) < maxFollowsPerDay {
 			newFollowingIDs = append(newFollowingIDs, id)
 		} else if !e {
 			newFollowerIDs = append(newFollowerIDs, id)
@@ -231,7 +236,7 @@ func run() error {
 	followedUserIDs := make(map[int64]struct{})
 	wg.Add(1)
 	go func() {
-		doneids, err := followByIDs(client, newFollowingIDs)
+		doneids, err := followByIDs(client, maxFollowsPerDay, newFollowingIDs)
 		if err != nil {
 			log.Printf("%+v\n", err)
 		}
