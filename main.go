@@ -1,3 +1,4 @@
+//go:build !test
 // +build !test
 
 package main
@@ -15,7 +16,6 @@ import (
 	"log"
 	"net/url"
 	"os"
-	"strings"
 	"sync"
 	"time"
 
@@ -39,6 +39,9 @@ func processTweet(tweet anaconda.Tweet, self anaconda.User, api *anaconda.Twitte
 	if !isFollower(api, tweet) {
 		return
 	}
+	if isProcessed(db, tweet.Id) {
+		return
+	}
 
 	t, err := tweet.CreatedAtTime()
 	if err != nil {
@@ -58,9 +61,7 @@ func processTweet(tweet anaconda.Tweet, self anaconda.User, api *anaconda.Twitte
 	insertResult(db, tweet.Id, result, err)
 
 	if err != nil {
-		if err.(*stdError) == nil {
-			_, _ = api.PostTweet("@theoldmoon0602 internal error", url.Values{})
-		}
+		log.Printf("runcmd: %v\n", err)
 		return
 	}
 
@@ -75,7 +76,7 @@ func processTweet(tweet anaconda.Tweet, self anaconda.User, api *anaconda.Twitte
 	return
 }
 
-/// ShellgeiBot main function
+// / ShellgeiBot main function
 func botMain(twitterConfigFile, botConfigFile string) {
 	twitterKey, err := twitter.ParseTwitterKey(twitterConfigFile)
 	if err != nil {
@@ -91,34 +92,35 @@ func botMain(twitterConfigFile, botConfigFile string) {
 	anaconda.SetConsumerKey(twitterKey.ConsumerKey)
 	anaconda.SetConsumerSecret(twitterKey.ConsumerSecret)
 	api := anaconda.NewTwitterApi(twitterKey.AccessToken, twitterKey.AccessSecret)
+	api.SetLogger(anaconda.BasicLogger)
 
-	v := url.Values{}
-	self, err := api.GetSelf(v)
+	self, err := api.GetSelf(url.Values{})
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	config, err := parseBotConfig(botConfigFile)
-	if err != nil {
-		log.Fatal(err)
-	}
-	v.Set("track", strings.Join(config.Tags, ","))
-	stream := api.PublicStreamFilter(v)
-
+	ticker := time.NewTimer(1 * time.Minute)
+	v := url.Values{}
+	v.Set("count", "200")
 	for {
-		t := <-stream.C
-		switch tweet := t.(type) {
-		case anaconda.Tweet:
-			config, err = parseBotConfig(botConfigFile)
-			if err != nil {
-				_, _ = api.PostTweet("@theoldmoon0602 Internal error", v)
-				log.Fatal(err)
-			}
-
-			go func() {
-				processTweet(tweet, self, api, db, config)
-			}()
+		tweets, err := api.GetHomeTimeline(v)
+		if err != nil {
+			log.Printf("GetHomeTimeline: %v", err)
+			<-ticker.C
+			continue
 		}
+
+		for _, tweet := range tweets {
+			processTweet(tweet, self, api, db, config)
+			v.Set("since_id", tweet.IdStr)
+		}
+
+		<-ticker.C
 	}
 }
 

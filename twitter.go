@@ -197,6 +197,7 @@ func isFollower(api *anaconda.TwitterApi, tweet anaconda.Tweet) bool {
 	v := url.Values{}
 	u, err := api.GetUsersShowById(tweet.User.Id, v)
 	if err != nil {
+		log.Printf("isFollower %v\n", err)
 		return false
 	}
 	return u.Following

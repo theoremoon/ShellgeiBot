@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"log"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -33,4 +34,18 @@ func insertShellGei(db *sql.DB, userID int64, screenName string, tweetID int64, 
 		return err
 	}
 	return nil
+}
+
+func isProcessed(db *sql.DB, tweetID int64) bool {
+	var cnt int
+	err := db.QueryRow("select count(*) from shellgeis where tweet_id = ?", tweetID).Scan(&cnt)
+
+	if err != nil {
+		log.Printf("isProcessed: %v\n", err)
+		return false
+	}
+	if cnt == 0 {
+		return false
+	}
+	return true
 }
