@@ -26,6 +26,7 @@ import (
 )
 
 func processTweet(tweet anaconda.Tweet, self anaconda.User, api *anaconda.TwitterApi, db *sql.DB, config botConfig) {
+	log.Printf("tweet: %d\n", tweet.Id)
 	// check if it is valid shellgei tweet
 	if tweet.RetweetedStatus != nil {
 		return
@@ -33,7 +34,7 @@ func processTweet(tweet anaconda.Tweet, self anaconda.User, api *anaconda.Twitte
 	if !isShellGeiTweet(tweet, config.Tags) {
 		return
 	}
-	log.Printf("treat it as the shellgei tweet")
+	log.Printf(" -> treat %d as the shellgei tweet \n", tweet.Id)
 	if self.Id == tweet.User.Id {
 		return
 	}
@@ -41,7 +42,7 @@ func processTweet(tweet anaconda.Tweet, self anaconda.User, api *anaconda.Twitte
 		return
 	}
 	if isProcessed(db, tweet.Id) {
-		log.Printf("already processed")
+		log.Printf("%d: already processed\n", tweet.Id)
 		return
 	}
 
@@ -106,7 +107,7 @@ func botMain(twitterConfigFile, botConfigFile string) {
 	}
 
 	config, err := parseBotConfig(botConfigFile)
-	ticker := time.NewTimer(1 * time.Minute)
+	ticker := time.NewTicker(1 * time.Minute)
 	v := url.Values{}
 	v.Set("count", "200")
 	for {
@@ -118,10 +119,8 @@ func botMain(twitterConfigFile, botConfigFile string) {
 		}
 
 		for _, tweet := range tweets {
-			log.Printf("tweet: %s,", tweet.IdStr)
-			processTweet(tweet, self, api, db, config)
+			go processTweet(tweet, self, api, db, config)
 			v.Set("since_id", tweet.IdStr)
-			log.Printf("\n")
 		}
 
 		<-ticker.C
