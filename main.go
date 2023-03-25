@@ -26,7 +26,6 @@ import (
 )
 
 func processTweet(tweet anaconda.Tweet, self anaconda.User, api *anaconda.TwitterApi, db *sql.DB, config botConfig) {
-	log.Printf("tweet: %d\n", tweet.Id)
 	// check if it is valid shellgei tweet
 	if tweet.RetweetedStatus != nil {
 		return
@@ -34,7 +33,7 @@ func processTweet(tweet anaconda.Tweet, self anaconda.User, api *anaconda.Twitte
 	if !isShellGeiTweet(tweet, config.Tags) {
 		return
 	}
-	log.Printf(" -> treat %d as the shellgei tweet \n", tweet.Id)
+	log.Printf("treat %d as the shellgei tweet \n", tweet.Id)
 	if self.Id == tweet.User.Id {
 		return
 	}
