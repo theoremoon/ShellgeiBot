@@ -119,7 +119,7 @@ func botMain(twitterConfigFile, botConfigFile string) {
 		}
 
 		for _, tweet := range tweets {
-			go processTweet(tweet, self, api, db, config)
+			processTweet(tweet, self, api, db, config)
 			v.Set("since_id", tweet.IdStr)
 		}
 
