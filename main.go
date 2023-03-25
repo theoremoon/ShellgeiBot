@@ -33,6 +33,7 @@ func processTweet(tweet anaconda.Tweet, self anaconda.User, api *anaconda.Twitte
 	if !isShellGeiTweet(tweet, config.Tags) {
 		return
 	}
+	log.Printf("treat it as the shellgei tweet")
 	if self.Id == tweet.User.Id {
 		return
 	}
@@ -40,6 +41,7 @@ func processTweet(tweet anaconda.Tweet, self anaconda.User, api *anaconda.Twitte
 		return
 	}
 	if isProcessed(db, tweet.Id) {
+		log.Printf("already processed")
 		return
 	}
 
@@ -116,8 +118,10 @@ func botMain(twitterConfigFile, botConfigFile string) {
 		}
 
 		for _, tweet := range tweets {
+			log.Printf("tweet: %s,", tweet.IdStr)
 			processTweet(tweet, self, api, db, config)
 			v.Set("since_id", tweet.IdStr)
+			log.Printf("\n")
 		}
 
 		<-ticker.C
